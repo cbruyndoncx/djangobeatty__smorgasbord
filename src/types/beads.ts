@@ -91,9 +91,33 @@ export interface Polecat {
   convoy?: string;
 }
 
+export type RefineryStatus = 'active' | 'idle' | 'processing' | 'error';
+
+export interface PullRequest {
+  number: number;
+  title: string;
+  branch: string;
+  author: string;
+  createdAt: string;
+  url: string;
+}
+
+export interface Refinery {
+  id: string;
+  name: string;
+  rig: string;
+  status: RefineryStatus;
+  queueDepth: number;
+  currentPR: PullRequest | null;
+  pendingPRs: PullRequest[];
+  lastProcessedAt: string | null;
+  agent_state: AgentState;
+}
+
 export interface BeadsData {
   issues: Issue[];
   convoys: Convoy[];
   polecats: Polecat[];
   rigs: Rig[];
+  refineries?: Refinery[];
 }

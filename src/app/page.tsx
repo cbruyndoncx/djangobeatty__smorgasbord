@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { RefineriesPanel } from '@/components/refinery';
 
 export default function Dashboard() {
   return (
@@ -32,6 +33,12 @@ export default function Dashboard() {
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        {/* Refineries Panel */}
+        <div className="mb-8">
+          <RefineriesPanel />
+        </div>
+
+        {/* Work Status Kanban */}
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
             Work Status
