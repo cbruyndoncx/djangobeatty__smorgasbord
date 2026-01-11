@@ -91,14 +91,27 @@ export interface Polecat {
   convoy?: string;
 }
 
-export type WitnessStatus = 'active' | 'idle' | 'error' | 'stopped';
+export type RefineryStatus = 'active' | 'idle' | 'processing' | 'error';
 
-export interface Witness {
+export interface PullRequest {
+  number: number;
+  title: string;
+  branch: string;
+  author: string;
+  createdAt: string;
+  url: string;
+}
+
+export interface Refinery {
   id: string;
+  name: string;
   rig: string;
-  status: WitnessStatus;
-  last_check?: string;
-  unread_mail: number;
+  status: RefineryStatus;
+  queueDepth: number;
+  currentPR: PullRequest | null;
+  pendingPRs: PullRequest[];
+  lastProcessedAt: string | null;
+  agent_state: AgentState;
 }
 
 export interface BeadsData {
@@ -107,4 +120,5 @@ export interface BeadsData {
   polecats: Polecat[];
   witnesses: Witness[];
   rigs: Rig[];
+  refineries?: Refinery[];
 }
