@@ -12,6 +12,25 @@ export interface BeadsReaderConfig {
 }
 
 /**
+ * Resolve a beads path, following redirect files if present
+ * A redirect file contains the relative path to the actual beads directory
+ */
+export async function resolveBeadsPath(beadsPath: string): Promise<string> {
+  const redirectPath = path.join(beadsPath, 'redirect');
+  try {
+    const redirectContent = await fs.readFile(redirectPath, 'utf-8');
+    const redirectTarget = redirectContent.trim();
+    // Resolve relative to the directory containing the redirect file
+    const resolvedPath = path.resolve(beadsPath, redirectTarget);
+    // Recursively resolve in case of chained redirects
+    return resolveBeadsPath(resolvedPath);
+  } catch {
+    // No redirect file, use the path as-is
+    return beadsPath;
+  }
+}
+
+/**
  * Discover all rigs in the Gas Town by looking for .beads directories
  */
 export async function discoverRigs(basePath: string): Promise<string[]> {
@@ -40,9 +59,12 @@ export async function discoverRigs(basePath: string): Promise<string[]> {
 
 /**
  * Read issues.jsonl from a specific beads directory
+ * Follows redirect files if present
  */
 export async function readIssuesJsonl(beadsPath: string): Promise<string> {
-  const issuesPath = path.join(beadsPath, 'issues.jsonl');
+  // Resolve any redirect files first
+  const resolvedPath = await resolveBeadsPath(beadsPath);
+  const issuesPath = path.join(resolvedPath, 'issues.jsonl');
   try {
     return await fs.readFile(issuesPath, 'utf-8');
   } catch (error) {
