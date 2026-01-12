@@ -64,6 +64,7 @@ export async function discoverRigs(basePath: string): Promise<string[]> {
 /**
  * Query the beads daemon for live issue data
  * This replaces reading from stale issues.jsonl
+ * Converts JSON array output to JSONL format for compatibility
  */
 export async function queryBeadsDaemon(beadsPath: string): Promise<string> {
   // Resolve any redirect files first
@@ -76,6 +77,13 @@ export async function queryBeadsDaemon(beadsPath: string): Promise<string> {
       timeout: 10000, // 10 second timeout
     });
 
+    // bd list --json returns a JSON array, convert to JSONL for compatibility
+    const issues = JSON.parse(stdout.trim() || '[]');
+    if (Array.isArray(issues)) {
+      return issues.map(issue => JSON.stringify(issue)).join('\n');
+    }
+
+    // If not an array, return as-is (might already be JSONL)
     return stdout;
   } catch (error) {
     console.error(`Error querying beads daemon at ${resolvedPath}:`, error);
