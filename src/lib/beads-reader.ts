@@ -154,12 +154,68 @@ export function getBeadsPath(): string {
   return process.env.BEADS_PATH ?? path.join(process.cwd(), '..', '..', '..', '.beads');
 }
 
+interface GtStatusRig {
+  name: string;
+  polecat_count: number;
+  has_witness: boolean;
+  has_refinery: boolean;
+}
+
+interface GtStatusOutput {
+  name: string;
+  location: string;
+  rigs?: GtStatusRig[];
+}
+
+// Cache for detected rigs (refreshed on each BeadsReader instantiation)
+let cachedRigPaths: Record<string, string> | null = null;
+let cachedBasePath: string | null = null;
+
 /**
- * Get multi-rig configuration from environment
+ * Auto-detect rigs from gt status --json
+ * Returns rig paths for all rigs in the Gas Town
+ */
+export async function detectRigsFromGtStatus(): Promise<{ basePath: string; rigPaths: Record<string, string> }> {
+  try {
+    const { stdout } = await execAsync('gt status --json', {
+      timeout: 5000,
+    });
+
+    const data: GtStatusOutput = JSON.parse(stdout.trim());
+    const basePath = data.location;
+    const rigPaths: Record<string, string> = {};
+
+    if (data.rigs && Array.isArray(data.rigs)) {
+      for (const rig of data.rigs) {
+        rigPaths[rig.name] = path.join(basePath, rig.name, '.beads');
+      }
+    }
+
+    // Cache the results
+    cachedBasePath = basePath;
+    cachedRigPaths = rigPaths;
+
+    return { basePath, rigPaths };
+  } catch (error) {
+    console.error('Error detecting rigs from gt status:', error);
+    // Fall back to environment variables or defaults
+    return { basePath: '', rigPaths: {} };
+  }
+}
+
+/**
+ * Get multi-rig configuration
+ * Priority: 1) Cached detection, 2) Environment vars, 3) Default single rig
  */
 export function getRigPaths(): Record<string, string> {
+  // Use cached detection if available
+  if (cachedRigPaths && Object.keys(cachedRigPaths).length > 0) {
+    return cachedRigPaths;
+  }
+
+  // Fall back to environment variables
   const rigsEnv = process.env.GT_RIGS;
-  const basePath = process.env.GT_BASE_PATH ?? path.join(process.cwd(), '..', '..', '..');
+  const basePath = process.env.GT_BASE_PATH ?? cachedBasePath ?? path.join(process.cwd(), '..', '..', '..');
 
   if (rigsEnv) {
     // Parse comma-separated rig names
@@ -181,23 +237,41 @@ export function getRigPaths(): Record<string, string> {
 
 export class BeadsReader {
   private beadsPath: string;
-  private multiRig: boolean;
   private rigPaths: Record<string, string>;
+  private initialized: boolean = false;
 
   constructor(config?: BeadsReaderConfig) {
     this.beadsPath = config?.beadsPath ?? getBeadsPath();
     this.rigPaths = getRigPaths();
-    this.multiRig = Object.keys(this.rigPaths).length > 1;
+  }
+
+  /**
+   * Initialize by auto-detecting rigs from gt status
+   * Called automatically on first getIssuesRaw() if not already initialized
+   */
+  async initialize(): Promise<void> {
+    if (this.initialized) return;
+
+    const { rigPaths } = await detectRigsFromGtStatus();
+    if (Object.keys(rigPaths).length > 0) {
+      this.rigPaths = rigPaths;
+    }
+    this.initialized = true;
   }
 
   async getIssuesRaw(): Promise<string> {
-    if (this.multiRig) {
+    // Auto-initialize on first call
+    await this.initialize();
+
+    // Always aggregate from all detected rigs
+    if (Object.keys(this.rigPaths).length > 0) {
       return readAllIssues(this.rigPaths);
     }
     return readIssuesJsonl(this.beadsPath);
   }
 
   async getRigNames(): Promise<string[]> {
+    await this.initialize();
     return Object.keys(this.rigPaths);
   }
 }
@@ -210,4 +284,13 @@ export function getBeadsReader(): BeadsReader {
     reader = new BeadsReader();
   }
   return reader;
+}
+
+/**
+ * Force re-detection of rigs (useful after config changes)
+ */
+export function resetBeadsReader(): void {
+  reader = null;
+  cachedRigPaths = null;
+  cachedBasePath = null;
 }

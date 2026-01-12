@@ -205,9 +205,9 @@ export default function Settings() {
             </p>
             <div className="mt-4 space-y-2 text-sm">
               <div className="flex items-center gap-2">
-                <span className="text-zinc-600 dark:text-zinc-400">Mode:</span>
+                <span className="text-zinc-600 dark:text-zinc-400">Rig Detection:</span>
                 <span className="font-mono text-zinc-900 dark:text-zinc-100">
-                  {config.mode}
+                  Auto-detected from gt status
                 </span>
               </div>
               <div className="flex items-center gap-2">

@@ -1,8 +1,11 @@
 /**
  * Configuration schema types for Mission Control Dashboard
- * Supports multi-project configuration with mode auto-detection
+ * Rigs are auto-detected from gt status - no manual config needed
  */
 
+/**
+ * @deprecated Mode is auto-detected from gt status. This type exists for backwards compatibility.
+ */
 export type DashboardMode = 'single' | 'multi';
 
 /**
@@ -47,11 +50,14 @@ export interface DisplayPreferences {
 export interface DashboardConfig {
   /** Schema version for migration support */
   version: number;
-  /** Dashboard mode: single project or multi-project */
-  mode: DashboardMode;
-  /** List of configured projects */
+  /**
+   * @deprecated Mode is auto-detected from gt status. Kept for backwards compatibility.
+   * Dashboard always shows all detected rigs.
+   */
+  mode?: DashboardMode;
+  /** List of configured projects (optional - rigs auto-detected from gt status) */
   projects: ProjectConfig[];
-  /** Currently active project ID */
+  /** Currently active project ID (for filtering, not data source selection) */
   activeProject?: string;
   /** Display preferences */
   display?: DisplayPreferences;
@@ -61,10 +67,11 @@ export interface DashboardConfig {
 
 /**
  * Default configuration values
+ * Note: Rigs are auto-detected from gt status, projects array is optional
  */
 export const DEFAULT_CONFIG: DashboardConfig = {
   version: 1,
-  mode: 'single',
+  // mode is deprecated - rigs auto-detected
   projects: [],
   display: {
     defaultView: 'kanban',

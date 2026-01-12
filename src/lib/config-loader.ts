@@ -296,11 +296,8 @@ export async function loadConfig(): Promise<ConfigResult<DashboardConfig>> {
       };
     }
 
-    // Auto-detect mode if not set
-    if (!config.mode) {
-      config.mode = await detectMode(config);
-    }
-
+    // Mode is deprecated - rigs auto-detected from gt status
+    // Keep mode field for backwards compatibility but don't compute it
     return { success: true, data: config as DashboardConfig };
   } catch (error) {
     if (error instanceof SyntaxError) {
