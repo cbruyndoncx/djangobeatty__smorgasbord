@@ -1,10 +1,72 @@
 'use client';
 
-import { useProjectMode } from '@/lib/project-mode';
+import { useState } from 'react';
 import { NavBar } from '@/components/layout';
+import { useConfig } from '@/lib/use-config';
+import { ProjectCard, ProjectForm, ConfirmModal } from '@/components/settings';
+import type { ProjectConfig } from '@/types/config';
 
 export default function Settings() {
-  const { mode, activeProject, isLoading } = useProjectMode();
+  const {
+    config,
+    isLoading,
+    error,
+    addProject,
+    updateProject,
+    deleteProject,
+    setActiveProject,
+  } = useConfig();
+
+  const [showProjectForm, setShowProjectForm] = useState(false);
+  const [editingProject, setEditingProject] = useState<ProjectConfig | null>(null);
+  const [deletingProject, setDeletingProject] = useState<ProjectConfig | null>(null);
+
+  const handleAddProject = () => {
+    setEditingProject(null);
+    setShowProjectForm(true);
+  };
+
+  const handleEditProject = (project: ProjectConfig) => {
+    setEditingProject(project);
+    setShowProjectForm(true);
+  };
+
+  const handleSaveProject = async (projectData: Omit<ProjectConfig, 'id'> & { id?: string }) => {
+    try {
+      if (projectData.id) {
+        await updateProject(projectData as ProjectConfig);
+      } else {
+        await addProject(projectData);
+      }
+      setShowProjectForm(false);
+      setEditingProject(null);
+    } catch (err) {
+      console.error('Failed to save project:', err);
+    }
+  };
+
+  const handleDeleteProject = (project: ProjectConfig) => {
+    setDeletingProject(project);
+  };
+
+  const confirmDeleteProject = async () => {
+    if (deletingProject) {
+      try {
+        await deleteProject(deletingProject.id);
+      } catch (err) {
+        console.error('Failed to delete project:', err);
+      }
+      setDeletingProject(null);
+    }
+  };
+
+  const handleSetActive = async (project: ProjectConfig) => {
+    try {
+      await setActiveProject(project.id);
+    } catch (err) {
+      console.error('Failed to set active project:', err);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
@@ -18,106 +80,183 @@ export default function Settings() {
           </p>
         </div>
 
+        {error && (
+          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-500/30 dark:bg-red-500/10">
+            <p className="text-red-700 dark:text-red-400">Error: {error.message}</p>
+          </div>
+        )}
+
         <div className="space-y-6">
-          {/* Project Mode Info */}
+          {/* Projects Section */}
           <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
-            <h3 className="text-lg font-medium text-zinc-900 dark:text-zinc-100">
-              Current Project
-            </h3>
-            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-              Project mode determines which features are available
-            </p>
-            <div className="mt-4 space-y-3">
-              {isLoading ? (
-                <p className="text-sm text-zinc-500">Loading...</p>
-              ) : (
-                <>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                      Mode:
-                    </span>
-                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                      mode === 'gastown'
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                        : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
-                    }`}>
-                      {mode === 'gastown' ? 'Gas Town (Full)' : 'Beads Only'}
-                    </span>
-                  </div>
-                  {activeProject && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                        Project:
-                      </span>
-                      <span className="text-sm text-zinc-600 dark:text-zinc-400">
-                        {activeProject.name}
-                      </span>
-                    </div>
-                  )}
-                  <p className="text-xs text-zinc-500 dark:text-zinc-500 mt-2">
-                    {mode === 'gastown'
-                      ? 'All features enabled: Polecats, Witnesses, Refineries, Convoys, Control Plane'
-                      : 'Limited features: Kanban board only. Gas Town features are hidden.'}
-                  </p>
-                </>
-              )}
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-medium text-zinc-900 dark:text-zinc-100">Projects</h3>
+                <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+                  Manage your configured projects
+                </p>
+              </div>
+              <button
+                onClick={handleAddProject}
+                className="px-4 py-2 text-sm rounded-md bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:hover:bg-zinc-200 dark:text-zinc-900 transition-colors"
+              >
+                Add Project
+              </button>
             </div>
+
+            {isLoading ? (
+              <div className="py-8 text-center text-zinc-500">
+                Loading projects...
+              </div>
+            ) : config.projects.length === 0 ? (
+              <div className="py-8 text-center text-zinc-500">
+                <p>No projects configured yet.</p>
+                <p className="mt-2 text-sm">
+                  Add a project to get started with the dashboard.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {config.projects.map((project) => (
+                  <ProjectCard
+                    key={project.id}
+                    project={project}
+                    isActive={config.activeProject === project.id}
+                    onEdit={handleEditProject}
+                    onDelete={handleDeleteProject}
+                    onSetActive={handleSetActive}
+                  />
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Data Source */}
+          {/* Display Settings Section */}
           <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
             <h3 className="text-lg font-medium text-zinc-900 dark:text-zinc-100">
-              Data Source
+              Display Settings
             </h3>
             <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-              Configure the beads API endpoint and refresh interval
+              Configure the dashboard appearance and behavior
             </p>
             <div className="mt-4 space-y-4">
               <div>
                 <label
-                  htmlFor="refresh-interval"
+                  htmlFor="polling-interval"
                   className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
                 >
-                  Refresh Interval (seconds)
+                  Polling Interval (ms)
                 </label>
                 <input
                   type="number"
-                  id="refresh-interval"
-                  defaultValue={5}
-                  min={1}
+                  id="polling-interval"
+                  defaultValue={config.display?.pollingInterval || 5000}
+                  min={1000}
+                  step={1000}
                   className="mt-1 block w-full max-w-xs rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
                 />
+                <p className="mt-1 text-xs text-zinc-500">
+                  How often to refresh data (minimum 1000ms)
+                </p>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="theme"
+                  className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+                >
+                  Theme
+                </label>
+                <select
+                  id="theme"
+                  defaultValue={config.display?.theme || 'system'}
+                  className="mt-1 block w-full max-w-xs rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                >
+                  <option value="system">System</option>
+                  <option value="light">Light</option>
+                  <option value="dark">Dark</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="auto-refresh"
+                  defaultChecked={config.display?.autoRefresh !== false}
+                  className="h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-500 dark:border-zinc-700"
+                />
+                <label
+                  htmlFor="auto-refresh"
+                  className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
+                >
+                  Auto-refresh data
+                </label>
               </div>
             </div>
           </div>
 
-          {/* Display */}
+          {/* Configuration Info */}
           <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
             <h3 className="text-lg font-medium text-zinc-900 dark:text-zinc-100">
-              Display
+              Configuration
             </h3>
             <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-              Customize the dashboard appearance
+              Configuration file information
             </p>
-            <div className="mt-4 space-y-4">
-              <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  id="show-completed"
-                  defaultChecked
-                  className="h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-500 dark:border-zinc-700"
-                />
-                <label
-                  htmlFor="show-completed"
-                  className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
-                >
-                  Show completed items
-                </label>
+            <div className="mt-4 space-y-2 text-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-zinc-600 dark:text-zinc-400">Mode:</span>
+                <span className="font-mono text-zinc-900 dark:text-zinc-100">
+                  {config.mode}
+                </span>
               </div>
+              <div className="flex items-center gap-2">
+                <span className="text-zinc-600 dark:text-zinc-400">Version:</span>
+                <span className="font-mono text-zinc-900 dark:text-zinc-100">
+                  {config.version}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-zinc-600 dark:text-zinc-400">Config path:</span>
+                <span className="font-mono text-zinc-900 dark:text-zinc-100">
+                  ~/.mission-control/config.json
+                </span>
+              </div>
+              {config.updatedAt && (
+                <div className="flex items-center gap-2">
+                  <span className="text-zinc-600 dark:text-zinc-400">Last updated:</span>
+                  <span className="font-mono text-zinc-900 dark:text-zinc-100">
+                    {new Date(config.updatedAt).toLocaleString()}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </main>
+
+      {/* Modals */}
+      {showProjectForm && (
+        <ProjectForm
+          project={editingProject}
+          onSave={handleSaveProject}
+          onCancel={() => {
+            setShowProjectForm(false);
+            setEditingProject(null);
+          }}
+        />
+      )}
+
+      {deletingProject && (
+        <ConfirmModal
+          title="Delete Project"
+          message={`Are you sure you want to delete "${deletingProject.name}"? This action cannot be undone.`}
+          confirmLabel="Delete"
+          variant="danger"
+          onConfirm={confirmDeleteProject}
+          onCancel={() => setDeletingProject(null)}
+        />
+      )}
     </div>
   );
 }
