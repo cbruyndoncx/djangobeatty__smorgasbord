@@ -12,7 +12,21 @@ export const dynamic = 'force-dynamic';
 
 const execAsync = promisify(exec);
 
+interface GtAgent {
+  name: string;
+  address: string;
+  session?: string;
+  role: string;
+  running: boolean;
+  has_work: boolean;
+  unread_mail: number;
+  first_subject?: string;
+}
+
 interface GtStatusOutput {
+  name: string;
+  agents?: GtAgent[];
+  // Legacy format support
   mayor?: {
     status: string;
     session?: {
@@ -61,36 +75,48 @@ async function getMayorStatus(): Promise<MayorState> {
 
     const data: GtStatusOutput = JSON.parse(stdout.trim() || '{}');
 
-    if (!data.mayor) {
-      return { status: 'offline', session: null };
+    // Look for mayor in agents array (current gt status format)
+    const mayorAgent = data.agents?.find(agent => agent.name === 'mayor');
+
+    if (mayorAgent) {
+      const status: MayorStatus = mayorAgent.running ? 'online' : 'offline';
+
+      // Build session info from available data
+      const session: MayorSessionInfo = {
+        uptime: 'N/A', // gt status doesn't expose uptime yet
+        contextUsagePercent: 0, // gt status doesn't expose context yet
+        currentTask: mayorAgent.has_work
+          ? (mayorAgent.first_subject ?? 'Working')
+          : null,
+        lastActivity: mayorAgent.running ? 'active' : 'N/A',
+      };
+
+      return { status, session };
     }
 
-    const mayorData = data.mayor;
-    const status: MayorStatus =
-      mayorData.status === 'active' || mayorData.status === 'online' ? 'online' :
-      mayorData.status === 'busy' ? 'busy' : 'offline';
+    // Legacy format support
+    if (data.mayor) {
+      const mayorData = data.mayor;
+      const status: MayorStatus =
+        mayorData.status === 'active' || mayorData.status === 'online' ? 'online' :
+        mayorData.status === 'busy' ? 'busy' : 'offline';
 
-    const session: MayorSessionInfo | null = mayorData.session ? {
-      uptime: parseUptime(mayorData.session.uptime),
-      contextUsagePercent: mayorData.session.context_percent ?? 0,
-      currentTask: mayorData.session.current_task ?? null,
-      lastActivity: parseLastActivity(mayorData.session.last_activity),
-    } : null;
+      const session: MayorSessionInfo | null = mayorData.session ? {
+        uptime: parseUptime(mayorData.session.uptime),
+        contextUsagePercent: mayorData.session.context_percent ?? 0,
+        currentTask: mayorData.session.current_task ?? null,
+        lastActivity: parseLastActivity(mayorData.session.last_activity),
+      } : null;
 
-    return { status, session };
+      return { status, session };
+    }
+
+    return { status: 'offline', session: null };
   } catch (error) {
     console.error('Error getting mayor status:', error);
 
-    // Return mock data for development/demo purposes
-    return {
-      status: 'online',
-      session: {
-        uptime: '2h 34m',
-        contextUsagePercent: 45,
-        currentTask: 'Processing gt_dashboard work items',
-        lastActivity: 'just now',
-      },
-    };
+    // Return offline status on error (don't mock data)
+    return { status: 'offline', session: null };
   }
 }
 

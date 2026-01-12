@@ -69,20 +69,73 @@ export async function hasBeadsDirectory(projectPath: string): Promise<boolean> {
 }
 
 /**
+ * Check if a path or its parents contain a .gt directory (Gas Town indicator)
+ */
+async function findGtDirectory(startPath: string, maxLevels = 5): Promise<string | null> {
+  let currentPath = expandPath(startPath);
+
+  for (let i = 0; i < maxLevels; i++) {
+    const gtPath = join(currentPath, '.gt');
+    if (await pathExists(gtPath)) {
+      return currentPath;
+    }
+    const parentPath = join(currentPath, '..');
+    if (parentPath === currentPath) break;
+    currentPath = parentPath;
+  }
+  return null;
+}
+
+/**
  * Auto-detect dashboard mode based on environment
- * - If .gt directory exists in cwd or parent, likely single-project mode
+ * - If GT_RIGS env var is set, use multi-rig mode
+ * - If .gt directory exists (Gas Town), detect number of rigs
  * - If multiple projects configured, use multi-project mode
  */
 export async function detectMode(config: DashboardConfig): Promise<DashboardMode> {
+  // If GT_RIGS environment variable is set, it's multi-rig mode
+  if (process.env.GT_RIGS) {
+    const rigCount = process.env.GT_RIGS.split(',').filter(r => r.trim()).length;
+    if (rigCount > 1) {
+      return 'multi';
+    }
+  }
+
   // If multiple projects configured, use multi mode
   if (config.projects.length > 1) {
     return 'multi';
   }
 
-  // Check if we're in a Gas Town project
+  // Check for Gas Town directory at cwd or parent levels
   const cwd = process.cwd();
-  if (await hasGtDirectory(cwd)) {
-    return 'single';
+  const gtBasePath = process.env.GT_BASE_PATH ?? await findGtDirectory(cwd);
+
+  if (gtBasePath) {
+    // We're in a Gas Town setup - check for multiple rigs
+    try {
+      const entries = await fs.readdir(gtBasePath, { withFileTypes: true });
+      const rigDirs = entries.filter(e =>
+        e.isDirectory() &&
+        !e.name.startsWith('.') &&
+        e.name !== 'mayor' &&
+        e.name !== 'deacon'
+      );
+
+      // Check if any of these directories are rigs (have .beads)
+      let rigCount = 0;
+      for (const dir of rigDirs) {
+        const beadsPath = join(gtBasePath, dir.name, '.beads');
+        if (await pathExists(beadsPath)) {
+          rigCount++;
+        }
+      }
+
+      if (rigCount > 1) {
+        return 'multi';
+      }
+    } catch {
+      // Ignore errors in directory scanning
+    }
   }
 
   // Default based on project count
