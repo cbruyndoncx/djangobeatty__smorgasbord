@@ -92,23 +92,10 @@ export function ProjectModeProvider({
     }
 
     async function detectMode() {
-      try {
-        // Check if gt commands are available by calling an API that uses them
-        const response = await fetch('/api/beads?detectMode=true');
-        if (response.ok) {
-          const data = await response.json();
-          // If we get gastown-specific data (polecats, witnesses), we're in gastown mode
-          const hasGasTownFeatures =
-            (data.polecats && data.polecats.length > 0) ||
-            (data.witnesses && data.witnesses.length > 0);
-          setDetectedMode(hasGasTownFeatures ? 'gastown' : 'beads-only');
-        } else {
-          setDetectedMode('beads-only');
-        }
-      } catch {
-        // If detection fails, default to gastown for backwards compatibility
-        setDetectedMode('gastown');
-      }
+      // This dashboard is designed for Gas Town - always use gastown mode
+      // The beads-only mode was intended for standalone beads usage but
+      // this dashboard is specifically built for multi-rig Gas Town environments
+      setDetectedMode('gastown');
     }
 
     loadConfig();
