@@ -13,15 +13,25 @@ export default function Dashboard() {
 
   const handleStatusChange = useCallback(
     async (issue: Issue, newStatus: IssueStatus) => {
-      // For now, just log the change - actual API integration would go here
-      console.log(`Status change: ${issue.id} from ${issue.status} to ${newStatus}`);
-      // In a real implementation, this would:
-      // 1. Call an API to update the issue status
-      // 2. Then refresh() to get updated data
-      // await fetch(`/api/beads/issues/${issue.id}/status`, { method: 'PATCH', body: JSON.stringify({ status: newStatus }) });
-      // refresh();
+      try {
+        const response = await fetch(`/api/beads/issues/${issue.id}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('Failed to update status:', errorData);
+          return;
+        }
+
+        refresh();
+      } catch (error) {
+        console.error('Error updating bead status:', error);
+      }
     },
-    []
+    [refresh]
   );
 
   return (
