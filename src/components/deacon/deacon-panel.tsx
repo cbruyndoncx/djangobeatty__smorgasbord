@@ -5,6 +5,12 @@ import { cn } from '@/lib/utils';
 
 interface DeaconStatus {
   alive: boolean;
+  session: string | null;
+  role: string | null;
+  state: string | null;
+  has_work: boolean;
+  unread_mail: number;
+  // Legacy fields for compatibility
   pid: number | null;
   version: string | null;
   started_at: string | null;
@@ -171,21 +177,21 @@ export function DeaconPanel({ pollingInterval = 5000 }: DeaconPanelProps) {
 
   if (isLoading && !status) {
     return (
-      <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
+      <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 shadow-sm dark:shadow-none">
         <div className="animate-pulse">
-          <div className="h-4 bg-zinc-800 rounded w-1/3 mb-4"></div>
-          <div className="h-20 bg-zinc-800 rounded"></div>
+          <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-1/3 mb-4"></div>
+          <div className="h-20 bg-zinc-200 dark:bg-zinc-800 rounded"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
+    <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 shadow-sm dark:shadow-none">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <h3 className="text-lg font-semibold text-zinc-100">Deacon</h3>
+          <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Deacon</h3>
           <div
             className={cn(
               'flex items-center gap-2 px-2 py-1 rounded-full text-xs font-medium',
@@ -249,7 +255,7 @@ export function DeaconPanel({ pollingInterval = 5000 }: DeaconPanelProps) {
             <div className="flex gap-2">
               <button
                 onClick={handleSweepCancel}
-                className="px-2 py-1 text-xs rounded bg-zinc-700 hover:bg-zinc-600 text-zinc-300 transition-colors"
+                className="px-2 py-1 text-xs rounded bg-zinc-200 hover:bg-zinc-300 dark:bg-zinc-700 dark:hover:bg-zinc-600 text-zinc-700 dark:text-zinc-300 transition-colors"
               >
                 Cancel
               </button>
@@ -297,7 +303,7 @@ export function DeaconPanel({ pollingInterval = 5000 }: DeaconPanelProps) {
             </div>
             <button
               onClick={handleSweepCancel}
-              className="px-2 py-1 text-xs rounded bg-zinc-700 hover:bg-zinc-600 text-zinc-300 transition-colors"
+              className="px-2 py-1 text-xs rounded bg-zinc-200 hover:bg-zinc-300 dark:bg-zinc-700 dark:hover:bg-zinc-600 text-zinc-700 dark:text-zinc-300 transition-colors"
             >
               Dismiss
             </button>
@@ -307,45 +313,49 @@ export function DeaconPanel({ pollingInterval = 5000 }: DeaconPanelProps) {
 
       {/* Status Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-        <div className="bg-zinc-800/50 rounded p-3">
-          <div className="text-xs text-zinc-500 mb-1">PID</div>
-          <div className="text-sm font-mono text-zinc-300">
-            {status?.pid ?? 'N/A'}
+        <div className="bg-zinc-100 dark:bg-zinc-800/50 rounded p-3">
+          <div className="text-xs text-zinc-500 mb-1">Session</div>
+          <div className="text-sm font-mono text-zinc-700 dark:text-zinc-300">
+            {status?.session ?? 'N/A'}
           </div>
         </div>
-        <div className="bg-zinc-800/50 rounded p-3">
-          <div className="text-xs text-zinc-500 mb-1">Uptime</div>
-          <div className="text-sm font-mono text-zinc-300">
-            {formatUptime(status?.uptime_seconds ?? null)}
+        <div className="bg-zinc-100 dark:bg-zinc-800/50 rounded p-3">
+          <div className="text-xs text-zinc-500 mb-1">Role</div>
+          <div className="text-sm font-mono text-zinc-700 dark:text-zinc-300">
+            {status?.role ?? 'N/A'}
           </div>
         </div>
-        <div className="bg-zinc-800/50 rounded p-3">
-          <div className="text-xs text-zinc-500 mb-1">Interval</div>
-          <div className="text-sm font-mono text-zinc-300">
-            {status?.interval ?? 'N/A'}
+        <div className="bg-zinc-100 dark:bg-zinc-800/50 rounded p-3">
+          <div className="text-xs text-zinc-500 mb-1">State</div>
+          <div className={cn(
+            'text-sm font-mono',
+            status?.state === 'idle' ? 'text-zinc-500' :
+            status?.state === 'active' ? 'text-green-600 dark:text-green-400' :
+            'text-zinc-700 dark:text-zinc-300'
+          )}>
+            {status?.state ?? 'N/A'}
+            {status?.has_work && <span className="ml-1 text-amber-500">*</span>}
           </div>
         </div>
-        <div className="bg-zinc-800/50 rounded p-3">
-          <div className="text-xs text-zinc-500 mb-1">Last Activity</div>
-          <div className="text-sm font-mono text-zinc-300">
-            {formatTimestamp(status?.last_activity ?? null)}
+        <div className="bg-zinc-100 dark:bg-zinc-800/50 rounded p-3">
+          <div className="text-xs text-zinc-500 mb-1">Unread Mail</div>
+          <div className={cn(
+            'text-sm font-mono',
+            (status?.unread_mail ?? 0) > 0
+              ? 'text-blue-600 dark:text-blue-400'
+              : 'text-zinc-700 dark:text-zinc-300'
+          )}>
+            {status?.unread_mail ?? 0}
           </div>
         </div>
       </div>
 
-      {/* Version info */}
-      {status?.version && (
-        <div className="text-xs text-zinc-500 mb-4">
-          Version: <span className="text-zinc-400">{status.version}</span>
-        </div>
-      )}
-
       {/* Log Tail */}
-      <div className="border-t border-zinc-800 pt-4">
+      <div className="border-t border-zinc-200 dark:border-zinc-800 pt-4">
         <div className="flex items-center justify-between mb-2">
-          <h4 className="text-sm font-medium text-zinc-400">Recent Logs</h4>
+          <h4 className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Recent Logs</h4>
         </div>
-        <div className="bg-zinc-950 rounded p-3 font-mono text-xs max-h-32 overflow-y-auto">
+        <div className="bg-zinc-100 dark:bg-zinc-950 rounded p-3 font-mono text-xs max-h-32 overflow-y-auto">
           {status?.recent_logs && status.recent_logs.length > 0 ? (
             status.recent_logs.map((log, idx) => (
               <div
@@ -353,28 +363,28 @@ export function DeaconPanel({ pollingInterval = 5000 }: DeaconPanelProps) {
                 className={cn(
                   'py-0.5',
                   log.includes('level=ERROR') || log.includes('level=WARN')
-                    ? 'text-yellow-500'
-                    : 'text-zinc-500'
+                    ? 'text-yellow-600 dark:text-yellow-500'
+                    : 'text-zinc-600 dark:text-zinc-500'
                 )}
               >
                 {formatLogLine(log)}
               </div>
             ))
           ) : (
-            <div className="text-zinc-600">No recent logs</div>
+            <div className="text-zinc-500 dark:text-zinc-600">No recent logs</div>
           )}
         </div>
       </div>
 
       {/* Error Logs */}
       {status?.error_logs && status.error_logs.length > 0 && (
-        <div className="border-t border-zinc-800 pt-4 mt-4">
-          <h4 className="text-sm font-medium text-red-400 mb-2">
+        <div className="border-t border-zinc-200 dark:border-zinc-800 pt-4 mt-4">
+          <h4 className="text-sm font-medium text-red-600 dark:text-red-400 mb-2">
             Errors/Warnings
           </h4>
-          <div className="bg-red-950/30 rounded p-3 font-mono text-xs max-h-24 overflow-y-auto">
+          <div className="bg-red-50 dark:bg-red-950/30 rounded p-3 font-mono text-xs max-h-24 overflow-y-auto">
             {status.error_logs.map((log, idx) => (
-              <div key={idx} className="py-0.5 text-red-400">
+              <div key={idx} className="py-0.5 text-red-600 dark:text-red-400">
                 {formatLogLine(log)}
               </div>
             ))}

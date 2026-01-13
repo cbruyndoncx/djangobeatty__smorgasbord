@@ -85,6 +85,7 @@ export interface Polecat {
   rig: string;
   status: AgentState;
   hooked_work: string | null;
+  unread_mail: number;
   session_start?: string;
   last_activity?: string;
   branch?: string;
@@ -122,6 +123,7 @@ export interface Refinery {
   pendingPRs: PullRequest[];
   lastProcessedAt: string | null;
   agent_state: AgentState;
+  unread_mail: number;
 }
 
 export interface BeadsData {

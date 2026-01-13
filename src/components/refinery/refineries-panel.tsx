@@ -79,10 +79,10 @@ export function RefineriesPanel({ onProcessQueue }: RefineriesPanelProps) {
 
   if (loading) {
     return (
-      <div className="rounded-lg border border-gray-800 bg-gray-900/30 p-6">
+      <div className="rounded-lg border border-zinc-200 dark:border-gray-800 bg-white dark:bg-gray-900/30 p-6 shadow-sm dark:shadow-none">
         <div className="flex items-center justify-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-          <span className="ml-3 text-gray-400">Loading refineries...</span>
+          <span className="ml-3 text-zinc-500 dark:text-gray-400">Loading refineries...</span>
         </div>
       </div>
     );
@@ -90,13 +90,13 @@ export function RefineriesPanel({ onProcessQueue }: RefineriesPanelProps) {
 
   if (error) {
     return (
-      <div className="rounded-lg border border-red-800 bg-red-900/20 p-6">
-        <div className="text-red-400">
+      <div className="rounded-lg border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-6 shadow-sm dark:shadow-none">
+        <div className="text-red-600 dark:text-red-400">
           <strong>Error:</strong> {error}
         </div>
         <button
           onClick={fetchRefineries}
-          className="mt-2 px-3 py-1 text-sm rounded bg-red-800 hover:bg-red-700 text-red-200"
+          className="mt-2 px-3 py-1 text-sm rounded bg-red-100 hover:bg-red-200 dark:bg-red-800 dark:hover:bg-red-700 text-red-700 dark:text-red-200"
         >
           Retry
         </button>
@@ -106,8 +106,8 @@ export function RefineriesPanel({ onProcessQueue }: RefineriesPanelProps) {
 
   if (refineries.length === 0) {
     return (
-      <div className="rounded-lg border border-gray-800 bg-gray-900/30 p-6 text-center">
-        <p className="text-gray-500">No refineries found</p>
+      <div className="rounded-lg border border-zinc-200 dark:border-gray-800 bg-white dark:bg-gray-900/30 p-6 text-center shadow-sm dark:shadow-none">
+        <p className="text-zinc-500 dark:text-gray-500">No refineries found</p>
       </div>
     );
   }
@@ -115,10 +115,10 @@ export function RefineriesPanel({ onProcessQueue }: RefineriesPanelProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-white">Refineries</h2>
+        <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Refineries</h2>
         <button
           onClick={fetchRefineries}
-          className="px-2 py-1 text-xs rounded bg-gray-800 hover:bg-gray-700 text-gray-300"
+          className="px-2 py-1 text-xs rounded bg-zinc-100 hover:bg-zinc-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-zinc-700 dark:text-gray-300"
         >
           Refresh
         </button>

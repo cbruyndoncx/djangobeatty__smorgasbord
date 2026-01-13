@@ -51,21 +51,21 @@ export function CrewPanel({ onSelectMember, selectedMemberId }: CrewPanelProps) 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'running':
-        return 'bg-green-500/20 text-green-400 border-green-500/30';
+        return 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400 border-green-300 dark:border-green-500/30';
       case 'stopped':
-        return 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30';
+        return 'bg-zinc-100 dark:bg-zinc-500/20 text-zinc-600 dark:text-zinc-400 border-zinc-300 dark:border-zinc-500/30';
       case 'error':
-        return 'bg-red-500/20 text-red-400 border-red-500/30';
+        return 'bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400 border-red-300 dark:border-red-500/30';
       default:
-        return 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30';
+        return 'bg-zinc-100 dark:bg-zinc-500/20 text-zinc-600 dark:text-zinc-400 border-zinc-300 dark:border-zinc-500/30';
     }
   };
 
   if (isLoading && !crewState) {
     return (
-      <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-6">
+      <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 p-6 shadow-sm dark:shadow-none">
         <div className="flex items-center gap-3 mb-4">
-          <h3 className="text-lg font-semibold text-white">Crew</h3>
+          <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">Crew</h3>
         </div>
         <p className="text-sm text-zinc-500">Loading crew members...</p>
       </div>
@@ -74,11 +74,11 @@ export function CrewPanel({ onSelectMember, selectedMemberId }: CrewPanelProps) 
 
   if (error) {
     return (
-      <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-6">
+      <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 p-6 shadow-sm dark:shadow-none">
         <div className="flex items-center gap-3 mb-4">
-          <h3 className="text-lg font-semibold text-white">Crew</h3>
+          <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">Crew</h3>
         </div>
-        <p className="text-sm text-red-400">Error: {error.message}</p>
+        <p className="text-sm text-red-600 dark:text-red-400">Error: {error.message}</p>
       </div>
     );
   }
@@ -86,18 +86,18 @@ export function CrewPanel({ onSelectMember, selectedMemberId }: CrewPanelProps) 
   const members = crewState?.members ?? [];
 
   return (
-    <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-6">
+    <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 p-6 shadow-sm dark:shadow-none">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <h3 className="text-lg font-semibold text-white">Crew</h3>
+          <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">Crew</h3>
           <span className="text-sm text-zinc-500">
             {crewState?.runningCount ?? 0} / {crewState?.totalCount ?? 0} running
           </span>
         </div>
         <button
           onClick={() => refresh()}
-          className="text-xs text-zinc-500 hover:text-zinc-300"
+          className="text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
         >
           Refresh
         </button>
@@ -113,8 +113,8 @@ export function CrewPanel({ onSelectMember, selectedMemberId }: CrewPanelProps) 
               key={member.id}
               className={`rounded-lg border p-3 cursor-pointer transition-colors ${
                 selectedMemberId === member.id
-                  ? 'border-blue-500 bg-blue-500/10'
-                  : 'border-zinc-700 bg-zinc-800/50 hover:border-zinc-600'
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10'
+                  : 'border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 hover:border-zinc-300 dark:hover:border-zinc-600'
               }`}
               onClick={() => onSelectMember?.(member)}
             >
@@ -123,7 +123,7 @@ export function CrewPanel({ onSelectMember, selectedMemberId }: CrewPanelProps) 
                   <span
                     className={`w-2 h-2 rounded-full ${getStatusColor(member.status)}`}
                   />
-                  <span className="font-medium text-white">{member.name}</span>
+                  <span className="font-medium text-zinc-900 dark:text-white">{member.name}</span>
                   <span
                     className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusBadge(
                       member.status
@@ -133,7 +133,7 @@ export function CrewPanel({ onSelectMember, selectedMemberId }: CrewPanelProps) 
                   </span>
                 </div>
                 {member.mailCount > 0 && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border border-yellow-300 dark:border-yellow-500/30">
                     {member.mailCount} mail
                   </span>
                 )}
@@ -147,15 +147,15 @@ export function CrewPanel({ onSelectMember, selectedMemberId }: CrewPanelProps) 
                     <span
                       className={
                         member.gitStatus === 'dirty'
-                          ? 'text-yellow-400'
-                          : 'text-green-400'
+                          ? 'text-yellow-600 dark:text-yellow-400'
+                          : 'text-green-600 dark:text-green-400'
                       }
                     >
                       {member.gitStatus}
                     </span>
                   </span>
                 </div>
-                <div className="mt-1 text-zinc-600 truncate">{member.rig}</div>
+                <div className="mt-1 text-zinc-500 dark:text-zinc-600 truncate">{member.rig}</div>
               </div>
 
               {/* Nudge Input */}
@@ -166,7 +166,7 @@ export function CrewPanel({ onSelectMember, selectedMemberId }: CrewPanelProps) 
                     value={nudgeMessage}
                     onChange={(e) => setNudgeMessage(e.target.value)}
                     placeholder="Send a message..."
-                    className="flex-1 rounded-md border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm text-white placeholder-zinc-500 focus:border-zinc-600 focus:outline-none"
+                    className="flex-1 rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-1.5 text-sm text-zinc-900 dark:text-white placeholder-zinc-500 focus:border-zinc-400 dark:focus:border-zinc-600 focus:outline-none"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
@@ -191,7 +191,7 @@ export function CrewPanel({ onSelectMember, selectedMemberId }: CrewPanelProps) 
                       setNudgeTarget(null);
                       setNudgeMessage('');
                     }}
-                    className="rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-zinc-400 hover:border-zinc-600"
+                    className="rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-1.5 text-sm text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 dark:hover:border-zinc-600"
                   >
                     Cancel
                   </button>
@@ -203,7 +203,7 @@ export function CrewPanel({ onSelectMember, selectedMemberId }: CrewPanelProps) 
                       e.stopPropagation();
                       setNudgeTarget(member.id);
                     }}
-                    className="text-xs text-zinc-500 hover:text-zinc-300"
+                    className="text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
                   >
                     Send message
                   </button>

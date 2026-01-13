@@ -14,6 +14,7 @@ export interface UseConfigResult {
   updateProject: (project: ProjectConfig) => Promise<void>;
   deleteProject: (projectId: string) => Promise<void>;
   setActiveProject: (projectId: string) => Promise<void>;
+  setGtBasePath: (path: string) => Promise<void>;
 }
 
 function generateId(): string {
@@ -68,7 +69,7 @@ export function useConfig(): UseConfigResult {
     const newConfig: DashboardConfig = {
       ...config,
       projects: [...config.projects, newProject],
-      mode: config.projects.length >= 1 ? 'multi' : config.mode,
+      // mode is deprecated - rigs auto-detected from gt status
     };
     // If first project, make it active
     if (newConfig.projects.length === 1) {
@@ -92,7 +93,7 @@ export function useConfig(): UseConfigResult {
     const newConfig: DashboardConfig = {
       ...config,
       projects: newProjects,
-      mode: newProjects.length <= 1 ? 'single' : 'multi',
+      // mode is deprecated - rigs auto-detected from gt status
     };
     // Update active project if deleted
     if (config.activeProject === projectId) {
@@ -105,6 +106,14 @@ export function useConfig(): UseConfigResult {
     const newConfig: DashboardConfig = {
       ...config,
       activeProject: projectId,
+    };
+    await saveConfigToServer(newConfig);
+  }, [config, saveConfigToServer]);
+
+  const setGtBasePath = useCallback(async (path: string) => {
+    const newConfig: DashboardConfig = {
+      ...config,
+      gtBasePath: path || undefined,
     };
     await saveConfigToServer(newConfig);
   }, [config, saveConfigToServer]);
@@ -123,5 +132,6 @@ export function useConfig(): UseConfigResult {
     updateProject,
     deleteProject,
     setActiveProject,
+    setGtBasePath,
   };
 }

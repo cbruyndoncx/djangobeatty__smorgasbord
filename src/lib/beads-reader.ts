@@ -6,10 +6,7 @@
 
 import { promises as fs } from 'fs';
 import path from 'path';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-
-const execAsync = promisify(exec);
+import { execGt } from './exec-gt';
 
 export interface BeadsReaderConfig {
   beadsPath: string;
@@ -72,7 +69,7 @@ export async function queryBeadsDaemon(beadsPath: string): Promise<string> {
 
   try {
     // Run bd list --json from the beads directory to get live data
-    const { stdout } = await execAsync('bd list --json', {
+    const { stdout } = await execGt('bd list --json', {
       cwd: resolvedPath,
       timeout: 10000, // 10 second timeout
     });
@@ -177,7 +174,7 @@ let cachedBasePath: string | null = null;
  */
 export async function detectRigsFromGtStatus(): Promise<{ basePath: string; rigPaths: Record<string, string> }> {
   try {
-    const { stdout } = await execAsync('gt status --json', {
+    const { stdout } = await execGt('gt status --json', {
       timeout: 5000,
     });
 

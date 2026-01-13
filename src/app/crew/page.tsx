@@ -18,7 +18,7 @@ export default function CrewPage() {
       <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
         <NavBar />
         <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-8 text-center">
+          <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-8 text-center shadow-sm">
             <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
               Crew Not Available
             </h2>

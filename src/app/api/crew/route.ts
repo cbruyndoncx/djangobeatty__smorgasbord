@@ -4,18 +4,15 @@
  */
 
 import { NextResponse } from 'next/server';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-import type { CrewMember, CrewState, CrewStatus } from '@/types/crew';
-
-const execAsync = promisify(exec);
+import { execGt } from '@/lib/exec-gt';
+import type { CrewMember, CrewState } from '@/types/crew';
 
 export const dynamic = 'force-dynamic';
 
 async function getCrewList(): Promise<CrewMember[]> {
   try {
-    // Get list of crew workspaces
-    const { stdout: listOutput } = await execAsync('gt crew list', {
+    // Get list of crew workspaces across all rigs
+    const { stdout: listOutput } = await execGt('gt crew list --all', {
       timeout: 10000,
     });
 
@@ -72,7 +69,7 @@ async function getCrewList(): Promise<CrewMember[]> {
     for (const member of members) {
       if (member.status === 'running') {
         try {
-          const { stdout: statusOutput } = await execAsync(
+          const { stdout: statusOutput } = await execGt(
             `gt crew status ${member.name}`,
             { timeout: 5000 }
           );

@@ -4,13 +4,10 @@
  */
 
 import { NextResponse } from 'next/server';
-import { exec } from 'child_process';
-import { promisify } from 'util';
 import type { IssueStatus } from '@/types/beads';
+import { execGt } from '@/lib/exec-gt';
 
 export const dynamic = 'force-dynamic';
-
-const execAsync = promisify(exec);
 
 const validStatuses: IssueStatus[] = ['open', 'hooked', 'in_progress', 'blocked', 'closed'];
 
@@ -49,7 +46,7 @@ export async function PATCH(
       command = `bd set-state ${id} status=${status}`;
     }
 
-    const { stdout, stderr } = await execAsync(command, { cwd: basePath });
+    const { stdout, stderr } = await execGt(command, { cwd: basePath });
 
     return NextResponse.json({
       success: true,

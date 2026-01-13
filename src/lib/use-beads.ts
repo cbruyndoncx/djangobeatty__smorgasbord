@@ -47,6 +47,7 @@ export function useBeads(options: UseBeadsOptions = {}): UseBeadsResult {
         polecats: result.polecats ?? [],
         witnesses: result.witnesses ?? [],
         rigs: result.rigs ?? [],
+        refineries: result.refineries ?? [],
       });
       setError(null);
     } catch (err) {
@@ -137,10 +138,25 @@ export function useConvoys() {
 /**
  * Hook for fetching just witnesses
  */
-export function useWitnesses(rig?: string) {
-  const { data, isLoading, error, refresh } = useBeads({ rig });
+export function useWitnesses(options: UseBeadsOptions = {}) {
+  const { rig, ...rest } = options;
+  const { data, isLoading, error, refresh } = useBeads({ ...rest, rig });
   return {
     witnesses: data?.witnesses ?? [],
+    isLoading,
+    error,
+    refresh,
+  };
+}
+
+/**
+ * Hook for fetching just refineries
+ */
+export function useRefineries(options: UseBeadsOptions = {}) {
+  const { rig, ...rest } = options;
+  const { data, isLoading, error, refresh } = useBeads({ ...rest, rig });
+  return {
+    refineries: data?.refineries ?? [],
     isLoading,
     error,
     refresh,

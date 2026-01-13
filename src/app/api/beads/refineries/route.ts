@@ -7,12 +7,9 @@
 import { NextResponse } from 'next/server';
 import { getBeadsReader } from '@/lib/beads-reader';
 import type { Issue, Refinery, PullRequest, RefineryStatus, AgentState, RoleType } from '@/types/beads';
-import { exec } from 'child_process';
-import { promisify } from 'util';
+import { execGt } from '@/lib/exec-gt';
 
 export const dynamic = 'force-dynamic';
-
-const execAsync = promisify(exec);
 
 interface GHPullRequest {
   number: number;
@@ -39,7 +36,7 @@ function parseJsonl<T>(content: string): T[] {
 
 async function getGasTownPath(): Promise<string> {
   try {
-    const { stdout } = await execAsync('gt status --json', { timeout: 5000 });
+    const { stdout } = await execGt('gt status --json', { timeout: 5000 });
     const data = JSON.parse(stdout.trim());
     return data.location || process.cwd();
   } catch {
@@ -53,7 +50,7 @@ async function getPRsForRig(rigName: string): Promise<PullRequest[]> {
     const basePath = await getGasTownPath();
     const rigPath = `${basePath}/${rigName}`;
 
-    const { stdout } = await execAsync(
+    const { stdout } = await execGt(
       `gh pr list --json number,title,headRefName,author,createdAt,url --limit 20`,
       { cwd: rigPath }
     );
@@ -119,19 +116,18 @@ export async function GET() {
       .map((issue) => parseRefineryFromIssue(issue))
       .filter((r): r is Partial<Refinery> => r !== null);
 
+    // Fetch PRs for all rigs in parallel (much faster than sequential)
+    const prPromises = rigNames.map(rigName => getPRsForRig(rigName));
+    const allPRsArrays = await Promise.all(prPromises);
+
     // Build refineries with PR data
-    const refineries: Refinery[] = [];
-
-    for (const rigName of rigNames) {
-      // Find existing refinery agent for this rig
+    const refineries: Refinery[] = rigNames.map((rigName, index) => {
       const existingRefinery = refineryPartials.find((r) => r.rig === rigName);
-
-      // Get PRs for this rig
-      const prs = await getPRsForRig(rigName);
+      const prs = allPRsArrays[index];
       const currentPR = prs.length > 0 ? prs[0] : null;
       const pendingPRs = prs.slice(1);
 
-      const refinery: Refinery = {
+      return {
         id: existingRefinery?.id ?? `refinery-${rigName}`,
         name: existingRefinery?.name ?? `${rigName} Refinery`,
         rig: rigName,
@@ -141,10 +137,9 @@ export async function GET() {
         pendingPRs,
         lastProcessedAt: null,
         agent_state: existingRefinery?.agent_state ?? 'idle',
+        unread_mail: existingRefinery?.unread_mail ?? 0,
       };
-
-      refineries.push(refinery);
-    }
+    });
 
     return NextResponse.json({
       refineries,
@@ -178,7 +173,7 @@ export async function POST(request: Request) {
     if (action === 'process') {
       // Execute gt mq process
       const basePath = process.env.GT_BASE_PATH ?? process.cwd();
-      const { stdout, stderr } = await execAsync(`gt mq process`, {
+      const { stdout, stderr } = await execGt(`gt mq process`, {
         cwd: `${basePath}/${rig}`,
       });
 

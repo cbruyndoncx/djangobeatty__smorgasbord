@@ -8,11 +8,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { exec } from 'child_process';
-import { promisify } from 'util';
 import path from 'path';
-
-const execAsync = promisify(exec);
+import { execGt } from '@/lib/exec-gt';
 
 export const dynamic = 'force-dynamic';
 
@@ -97,7 +94,7 @@ export async function GET() {
     // Run gt orphans to find orphaned beads
     let orphans: OrphanedBead[] = [];
     try {
-      const { stdout } = await execAsync('gt orphans', {
+      const { stdout } = await execGt('gt orphans', {
         cwd: basePath,
         timeout: 30000,
       });
@@ -146,7 +143,7 @@ export async function POST(request: NextRequest) {
     // First, get the list of orphaned beads
     let orphans: OrphanedBead[] = [];
     try {
-      const { stdout } = await execAsync('gt orphans', {
+      const { stdout } = await execGt('gt orphans', {
         cwd: basePath,
         timeout: 30000,
       });
@@ -178,7 +175,7 @@ export async function POST(request: NextRequest) {
     for (const orphan of orphans) {
       try {
         const command = `bd close ${orphan.id} --reason "Auto-closed by Deacon sweep: orphaned bead"`;
-        await execAsync(command, {
+        await execGt(command, {
           cwd: path.dirname(beadsPath),
           timeout: 10000,
         });

@@ -10,6 +10,7 @@ interface IssueCardProps {
   onDragStart?: (e: React.DragEvent, issue: Issue) => void;
   onContextMenu?: (e: React.MouseEvent, issue: Issue) => void;
   isDragging?: boolean;
+  isHighlighted?: boolean;
 }
 
 const priorityConfig: Record<Priority, { label: string; className: string; dotClass: string }> = {
@@ -54,6 +55,7 @@ export function IssueCard({
   onDragStart,
   onContextMenu,
   isDragging,
+  isHighlighted,
 }: IssueCardProps) {
   const priority = priorityConfig[issue.priority];
   const typeIcon = issueTypeIcons[issue.issue_type] || '◇';
@@ -75,21 +77,24 @@ export function IssueCard({
 
   return (
     <div
+      data-issue-id={issue.id}
       draggable
       onDragStart={(e) => onDragStart?.(e, issue)}
       onClick={() => onClick?.(issue)}
       onContextMenu={(e) => onContextMenu?.(e, issue)}
       className={cn(
-        'group cursor-pointer rounded-md border border-l-4 bg-white p-3 shadow-sm transition-all',
-        'hover:shadow-md hover:border-zinc-300',
-        'dark:bg-zinc-800 dark:border-zinc-700 dark:hover:border-zinc-600',
+        'group cursor-pointer rounded-md border border-l-4 p-3 shadow-sm transition-all duration-300',
+        !isHighlighted && 'bg-white dark:bg-zinc-800',
+        !isHighlighted && 'hover:shadow-md hover:border-zinc-300 dark:hover:border-zinc-600',
+        !isHighlighted && 'border-zinc-200 dark:border-zinc-700',
         priority.className,
-        isDragging && 'opacity-50 rotate-2 scale-105'
+        isDragging && 'opacity-50 rotate-2 scale-105',
+        isHighlighted && 'bg-blue-100 dark:bg-blue-900 border-blue-500 border-4 shadow-[0_0_30px_rgba(59,130,246,0.6)] scale-[1.15] animate-pulse !important'
       )}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400">
-          <span title={issue.issue_type}>{typeIcon}</span>
+          <span className="text-base" title={issue.issue_type}>{typeIcon}</span>
           <span className="font-mono">{issue.id}</span>
         </div>
         <div className="flex items-center gap-1">

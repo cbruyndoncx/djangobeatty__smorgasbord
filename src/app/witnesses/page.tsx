@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useWitnesses, useRigs } from '@/lib/use-beads';
 import { useFeature } from '@/lib/project-mode';
 import { WitnessGrid } from '@/components/witness';
@@ -10,9 +11,15 @@ export default function WitnessesPage() {
   const hasWitnesses = useFeature('witnesses');
   const { witnesses, isLoading: witnessesLoading, error: witnessesError, refresh } = useWitnesses();
   const { rigs, isLoading: rigsLoading, error: rigsError } = useRigs();
+  const [feedback, setFeedback] = React.useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const isLoading = witnessesLoading || rigsLoading;
   const error = witnessesError || rigsError;
+
+  const showFeedback = (type: 'success' | 'error', message: string) => {
+    setFeedback({ type, message });
+    setTimeout(() => setFeedback(null), 3000);
+  };
 
   const handleNudge = async (witness: Witness) => {
     try {
@@ -24,12 +31,16 @@ export default function WitnessesPage() {
       const result = await response.json();
       if (!response.ok) {
         console.error('Nudge failed:', result.error);
+        showFeedback('error', `Nudge failed: ${result.error}`);
       } else {
         console.log('Nudge sent:', result);
+        const message = result.output?.trim() || `Nudged ${witness.rig} witness`;
+        showFeedback('success', message);
         refresh();
       }
     } catch (err) {
       console.error('Nudge error:', err);
+      showFeedback('error', 'Failed to send nudge');
     }
   };
 
@@ -43,12 +54,16 @@ export default function WitnessesPage() {
       const result = await response.json();
       if (!response.ok) {
         console.error('Start failed:', result.error);
+        showFeedback('error', `Start failed: ${result.error}`);
       } else {
         console.log('Witness started:', result);
+        const message = result.output?.trim() || `Started ${witness.rig} witness`;
+        showFeedback('success', message);
         refresh();
       }
     } catch (err) {
       console.error('Start error:', err);
+      showFeedback('error', 'Failed to start witness');
     }
   };
 
@@ -66,7 +81,7 @@ export default function WitnessesPage() {
       <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
         <NavBar />
         <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-8 text-center">
+          <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-8 text-center shadow-sm">
             <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
               Witnesses Not Available
             </h2>
@@ -85,6 +100,17 @@ export default function WitnessesPage() {
       <NavBar />
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        {/* Feedback Toast */}
+        {feedback && (
+          <div className={`mb-4 rounded-lg p-4 ${
+            feedback.type === 'success'
+              ? 'bg-green-500/10 border border-green-500/30 text-green-400'
+              : 'bg-red-500/10 border border-red-500/30 text-red-400'
+          }`}>
+            {feedback.message}
+          </div>
+        )}
+
         {/* Header */}
         <div className="mb-8 flex items-start justify-between">
           <div>

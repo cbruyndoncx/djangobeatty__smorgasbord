@@ -6,9 +6,227 @@
 
 import { NextResponse } from 'next/server';
 import { getBeadsReader } from '@/lib/beads-reader';
-import type { Issue, Rig, Polecat, Witness, Agent, RoleType, AgentState, RigState, Convoy, WitnessStatus } from '@/types/beads';
+import { getGtStatus, execGt } from '@/lib/exec-gt';
+import type { Issue, Rig, Polecat, Witness, Agent, RoleType, AgentState, RigState, Convoy, WitnessStatus, Refinery, RefineryStatus } from '@/types/beads';
 
 export const dynamic = 'force-dynamic';
+
+// Cache for beads data to avoid expensive recomputation on every request
+interface BeadsCache {
+  data: {
+    issues: Issue[];
+    rigs: Rig[];
+    polecats: Polecat[];
+    witnesses: Witness[];
+    refineries: Refinery[];
+    convoys: Convoy[];
+    timestamp: string;
+  };
+  timestamp: number;
+}
+let beadsCache: BeadsCache | null = null;
+const BEADS_CACHE_TTL = 5000; // 5 second TTL (matches polling interval)
+
+// Types for gt status --json response
+interface GtStatusAgent {
+  name: string;
+  address: string;
+  session: string;
+  role: string;
+  running: boolean;
+  has_work: boolean;
+  unread_mail: number;
+  first_subject?: string;
+}
+
+interface GtStatusRig {
+  name: string;
+  polecats: string[];
+  polecat_count: number;
+  has_witness: boolean;
+  has_refinery: boolean;
+  agents: GtStatusAgent[];
+}
+
+interface GtStatusOutput {
+  name: string;
+  location: string;
+  rigs: GtStatusRig[];
+}
+
+/**
+ * Fetch convoys from gt convoy list --json with full details
+ */
+async function fetchConvoys(): Promise<Convoy[]> {
+  try {
+    const { stdout } = await execGt('gt convoy list --all --json', {
+      timeout: 5000, // Reduced from 10s
+      cwd: process.env.GT_BASE_PATH || process.cwd(),
+    });
+    if (!stdout) return [];
+
+    const convoyList = JSON.parse(stdout.trim());
+    if (!Array.isArray(convoyList)) return [];
+
+    // Limit to top 20 convoys to avoid excessive API calls
+    const limitedConvoys = convoyList.slice(0, 20);
+
+    // Fetch full details for each convoy in parallel
+    const convoyDetailsPromises = limitedConvoys.map(async (c: any) => {
+      // If convoy is closed, mark as completed immediately without fetching details
+      // This prevents flickering when detail fetches timeout
+      if (c.status === 'closed') {
+        return {
+          id: c.id,
+          title: c.title,
+          issues: [],
+          status: 'completed' as const,
+          progress: { completed: 0, total: 0 },
+          created_at: c.created_at,
+          updated_at: c.updated_at || c.created_at,
+        };
+      }
+
+      // For open convoys, fetch details to determine if active or stalled
+      try {
+        const { stdout: detailStdout } = await execGt(`gt convoy status ${c.id} --json`, {
+          timeout: 3000, // Reduced from 10s
+          cwd: process.env.GT_BASE_PATH || process.cwd(),
+        });
+
+        const details = JSON.parse(detailStdout.trim());
+
+        // Map tracked issues to issue IDs
+        const issueIds = details.tracked?.map((t: any) => t.id) || [];
+
+        // Determine status for open convoys
+        let status: Convoy['status'] = 'active';
+        if (details.total === 0 || !details.tracked || details.tracked.length === 0) {
+          // Empty convoy or no tracked issues = stalled
+          status = 'stalled';
+        }
+
+        return {
+          id: c.id,
+          title: c.title,
+          issues: issueIds,
+          status,
+          progress: {
+            completed: details.completed || 0,
+            total: details.total || 0
+          },
+          created_at: c.created_at,
+          updated_at: c.updated_at || c.created_at,
+        };
+      } catch (error) {
+        console.error(`Error fetching convoy details for ${c.id}:`, error);
+        // If details fetch fails for open convoy, default to active (not stalled)
+        return {
+          id: c.id,
+          title: c.title,
+          issues: [],
+          status: 'active' as const,
+          progress: { completed: 0, total: 0 },
+          created_at: c.created_at,
+          updated_at: c.updated_at || c.created_at,
+        };
+      }
+    });
+
+    const convoys = await Promise.all(convoyDetailsPromises);
+
+    // Sort: stalled first, then active, then completed
+    const statusOrder = { stalled: 0, active: 1, completed: 2 };
+    convoys.sort((a, b) => statusOrder[a.status] - statusOrder[b.status]);
+
+    return convoys;
+  } catch (error) {
+    console.error('Error fetching convoys:', error);
+    return [];
+  }
+}
+
+/**
+ * Fetch witnesses, polecats, and refineries from gt status --json
+ */
+async function fetchGtStatus(): Promise<{ witnesses: Witness[]; polecatsFromGt: Polecat[]; refineries: Refinery[] }> {
+  const witnesses: Witness[] = [];
+  const polecatsFromGt: Polecat[] = [];
+  const refineries: Refinery[] = [];
+
+  try {
+    const gtStatus = await getGtStatus<GtStatusOutput>();
+
+    if (!gtStatus) {
+      return { witnesses, polecatsFromGt, refineries };
+    }
+
+    if (gtStatus.rigs) {
+      for (const rig of gtStatus.rigs) {
+        if (rig.agents) {
+          for (const agent of rig.agents) {
+            if (agent.role === 'witness') {
+              // Map running/has_work to witness status
+              let status: WitnessStatus = 'idle';
+              if (agent.running && agent.has_work) {
+                status = 'active';
+              } else if (!agent.running) {
+                status = 'stopped';
+              }
+
+              witnesses.push({
+                id: agent.address,
+                rig: rig.name,
+                status,
+                last_check: new Date().toISOString(),
+                unread_mail: agent.unread_mail || 0,
+              });
+            } else if (agent.role === 'polecat') {
+              // Map running status to AgentState: spawning | active | idle | done | error
+              const polecatStatus: AgentState = agent.running
+                ? (agent.has_work ? 'active' : 'idle')
+                : 'done'; // 'done' for stopped polecats
+
+              polecatsFromGt.push({
+                id: agent.address,
+                name: agent.name,
+                rig: rig.name,
+                status: polecatStatus,
+                hooked_work: agent.has_work ? 'work' : null,
+                unread_mail: agent.unread_mail || 0,
+              });
+            } else if (agent.role === 'refinery') {
+              // Map running/has_work to refinery status
+              let status: RefineryStatus = 'idle';
+              if (agent.running && agent.has_work) {
+                status = 'processing';
+              } else if (agent.running) {
+                status = 'active';
+              }
+
+              refineries.push({
+                id: agent.address,
+                name: agent.name,
+                rig: rig.name,
+                status,
+                queueDepth: 0, // TODO: Get actual queue depth from gt refinery queue
+                currentPR: null, // TODO: Get current PR from gt refinery status
+                pendingPRs: [],
+                lastProcessedAt: null,
+                agent_state: agent.running ? (agent.has_work ? 'active' : 'idle') : 'done',
+                unread_mail: agent.unread_mail || 0,
+              });
+            }
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Failed to fetch gt status:', error);
+  }
+
+  return { witnesses, polecatsFromGt, refineries };
+}
 
 function parseJsonl<T>(content: string): T[] {
   return content
@@ -73,9 +291,13 @@ function parseRigFromIssue(issue: Issue): Rig | null {
 /**
  * Derive convoys from feature/molecule issues
  * A convoy represents a work stream with multiple related issues
+ * OPTIMIZED: Uses Map lookups instead of array filters
  */
 function deriveConvoys(issues: Issue[], polecats: Polecat[]): Convoy[] {
   const convoys: Convoy[] = [];
+
+  // Build issue lookup map once - O(n)
+  const issueMap = new Map(issues.map(i => [i.id, i]));
 
   // Build a map of issue dependencies (what issues does each issue depend on)
   const dependencyMap = new Map<string, string[]>();
@@ -105,8 +327,12 @@ function deriveConvoys(issues: Issue[], polecats: Polecat[]): Convoy[] {
       convoyIssueIds.add(depId);
     }
 
-    // Get the actual issue objects
-    const convoyIssues = issues.filter((i) => convoyIssueIds.has(i.id));
+    // Get the actual issue objects using Map lookup - O(convoy_size) instead of O(n)
+    const convoyIssues: Issue[] = [];
+    for (const id of convoyIssueIds) {
+      const issue = issueMap.get(id);
+      if (issue) convoyIssues.push(issue);
+    }
 
     // Calculate progress
     const completed = convoyIssues.filter((i) => i.status === 'closed').length;
@@ -166,9 +392,27 @@ function deriveConvoys(issues: Issue[], polecats: Polecat[]): Convoy[] {
 
 export async function GET() {
   try {
+    const startTime = Date.now();
+    const now = Date.now();
+
+    // Return cached result if fresh (< 5 seconds old)
+    if (beadsCache && (now - beadsCache.timestamp) < BEADS_CACHE_TTL) {
+      console.log('[Beads API] Cache hit, returning cached data');
+      return NextResponse.json(beadsCache.data);
+    }
+
+    console.log('[Beads API] Cache miss, computing data...');
+    const t1 = Date.now();
+
     const reader = getBeadsReader();
     const content = await reader.getIssuesRaw();
     const issues = parseJsonl<Issue>(content);
+    console.log(`[Beads API] Parsed ${issues.length} issues in ${Date.now() - t1}ms`);
+
+    const t2 = Date.now();
+    // Fetch witnesses, polecats, and refineries from gt status --json (live data)
+    const { witnesses, polecatsFromGt, refineries } = await fetchGtStatus();
+    console.log(`[Beads API] Fetched gt status in ${Date.now() - t2}ms`);
 
     // Extract rigs from issues
     const rigs: Rig[] = issues
@@ -176,65 +420,54 @@ export async function GET() {
       .map((issue) => parseRigFromIssue(issue))
       .filter((rig): rig is Rig => rig !== null);
 
-    // Extract polecats from agent issues
-    const polecats: Polecat[] = issues
-      .filter((issue) => issue.issue_type === 'agent')
-      .map((issue) => parseAgentFromIssue(issue))
-      .filter((agent): agent is Agent => agent !== null && agent.role_type === 'polecat')
-      .map((agent) => ({
-        id: agent.id,
-        name: agent.title,
-        rig: agent.rig,
-        status: agent.agent_state,
-        hooked_work: agent.hook_bead,
-      }));
-
-    // Extract witnesses from agent issues
-    const witnesses: Witness[] = issues
-      .filter((issue) => issue.issue_type === 'agent')
-      .map((issue) => parseAgentFromIssue(issue))
-      .filter((agent): agent is Agent => agent !== null && agent.role_type === 'witness')
-      .map((agent) => {
-        const desc = issues.find((i) => i.id === agent.id)?.description ?? '';
-        const getField = (field: string): string | null => {
-          const match = desc.match(new RegExp(`${field}:\\s*(.+)`));
-          return match ? match[1].trim() : null;
-        };
-        const unreadMailStr = getField('unread_mail');
-        const lastCheck = getField('last_check');
-        const statusStr = getField('witness_status') ?? agent.agent_state;
-
-        // Map agent state to witness status
-        let witnessStatus: WitnessStatus = 'idle';
-        if (statusStr === 'active') witnessStatus = 'active';
-        else if (statusStr === 'error') witnessStatus = 'error';
-        else if (statusStr === 'stopped' || statusStr === 'done') witnessStatus = 'stopped';
-
-        return {
+    // Use polecats from gt status if available, otherwise fall back to beads
+    let polecats: Polecat[] = polecatsFromGt;
+    if (polecats.length === 0) {
+      // Fallback: Extract polecats from agent issues in beads
+      polecats = issues
+        .filter((issue) => issue.issue_type === 'agent')
+        .map((issue) => parseAgentFromIssue(issue))
+        .filter((agent): agent is Agent => agent !== null && agent.role_type === 'polecat')
+        .map((agent) => ({
           id: agent.id,
+          name: agent.title,
           rig: agent.rig,
-          status: witnessStatus,
-          last_check: lastCheck ?? agent.updated_at,
-          unread_mail: unreadMailStr ? parseInt(unreadMailStr, 10) : 0,
-        };
-      });
+          status: agent.agent_state,
+          hooked_work: agent.hook_bead,
+          unread_mail: 0, // Not available from beads, only from gt status
+        }));
+    }
+
+    // Witnesses come from gt status (live data) - no fallback needed
 
     // Filter out agent issues from the main issues list for cleaner display
     const workIssues = issues.filter(
       (issue) => issue.issue_type !== 'agent' && !issue.labels?.includes('gt:rig')
     );
 
-    // Derive convoys from feature/molecule issues with dependencies
-    const convoys = deriveConvoys(issues, polecats);
+    // Fetch convoys from gt convoy list
+    const t3 = Date.now();
+    const convoys = await fetchConvoys();
+    console.log(`[Beads API] Fetched ${convoys.length} convoys in ${Date.now() - t3}ms`);
 
-    return NextResponse.json({
+    const responseData = {
       issues: workIssues,
       rigs,
       polecats,
       witnesses,
+      refineries,
       convoys,
       timestamp: new Date().toISOString(),
-    });
+    };
+
+    // Update cache
+    beadsCache = {
+      data: responseData,
+      timestamp: Date.now(),
+    };
+
+    console.log(`[Beads API] Total request time: ${Date.now() - startTime}ms`);
+    return NextResponse.json(responseData);
   } catch (error) {
     console.error('Error fetching beads data:', error);
     return NextResponse.json(

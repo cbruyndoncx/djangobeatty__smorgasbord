@@ -1,32 +1,43 @@
 /**
  * API Route: GET /api/deacon
- * Returns deacon (daemon) status including:
- * - Alive/dead status
- * - Last activity timestamp
- * - Patrol interval
- * - Recent log entries
+ * Returns gt deacon status including:
+ * - Running/stopped status from gt status --json
+ * - Session name (tmux session)
+ * - Agent state
+ * - Unread mail count
  */
 
 import { NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-
-const execAsync = promisify(exec);
+import { execGt } from '@/lib/exec-gt';
 
 export const dynamic = 'force-dynamic';
 
-interface DaemonLock {
-  pid: number;
-  parent_pid: number;
-  database: string;
-  version: string;
-  started_at: string;
+interface GtAgent {
+  name: string;
+  address: string;
+  session: string;
+  role: string;
+  running: boolean;
+  has_work: boolean;
+  state: string;
+  unread_mail: number;
+  first_subject?: string;
+}
+
+interface GtStatusOutput {
+  name: string;
+  location: string;
+  agents: GtAgent[];
 }
 
 interface DeaconStatus {
   alive: boolean;
+  session: string | null;
+  role: string | null;
+  state: string | null;
+  has_work: boolean;
+  unread_mail: number;
+  // Keep these for compatibility with the panel
   pid: number | null;
   version: string | null;
   started_at: string | null;
@@ -37,122 +48,50 @@ interface DeaconStatus {
   error_logs: string[];
 }
 
-function getBeadsPath(): string {
-  return process.env.BEADS_PATH ?? path.join(process.cwd(), '..', '..', '..', '.beads');
-}
-
-async function checkProcessAlive(pid: number): Promise<boolean> {
-  try {
-    // On Unix, sending signal 0 checks if process exists
-    process.kill(pid, 0);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-async function parseLogForInterval(logPath: string): Promise<string> {
-  try {
-    const content = await fs.readFile(logPath, 'utf-8');
-    const lines = content.split('\n');
-
-    // Look for interval in startup message
-    for (const line of lines) {
-      if (line.includes('Daemon started') && line.includes('interval')) {
-        // Parse interval from log line like: interval: %v -> 5s
-        const match = line.match(/interval.*?(\d+[smh])/i);
-        if (match) return match[1];
-      }
-    }
-  } catch {
-    // Ignore read errors
-  }
-  return '5s'; // Default interval
-}
-
-async function getRecentLogs(logPath: string, count: number = 5): Promise<string[]> {
-  try {
-    const { stdout } = await execAsync(`tail -${count} "${logPath}"`);
-    return stdout.split('\n').filter(line => line.trim());
-  } catch {
-    return [];
-  }
-}
-
-async function getErrorLogs(logPath: string, count: number = 5): Promise<string[]> {
-  try {
-    const { stdout } = await execAsync(`grep -i "error\\|warn" "${logPath}" | tail -${count}`);
-    return stdout.split('\n').filter(line => line.trim());
-  } catch {
-    return [];
-  }
-}
-
-async function getLastActivity(logPath: string): Promise<string | null> {
-  try {
-    const { stdout } = await execAsync(`tail -1 "${logPath}"`);
-    const line = stdout.trim();
-    // Parse timestamp from log line: time=2026-01-12T01:58:11.286+07:00
-    const match = line.match(/time=([^\s]+)/);
-    if (match) return match[1];
-  } catch {
-    // Ignore errors
-  }
-  return null;
-}
-
 export async function GET() {
   try {
-    const beadsPath = getBeadsPath();
-    const lockPath = path.join(beadsPath, 'daemon.lock');
-    const logPath = path.join(beadsPath, 'daemon.log');
-
     const status: DeaconStatus = {
       alive: false,
+      session: null,
+      role: null,
+      state: null,
+      has_work: false,
+      unread_mail: 0,
       pid: null,
       version: null,
       started_at: null,
       uptime_seconds: null,
-      interval: '5s',
+      interval: 'N/A',
       last_activity: null,
       recent_logs: [],
       error_logs: [],
     };
 
-    // Try to read daemon.lock
     try {
-      const lockContent = await fs.readFile(lockPath, 'utf-8');
-      const lock: DaemonLock = JSON.parse(lockContent);
+      // Get deacon status from gt status --json
+      const { stdout } = await execGt('gt status --json 2>/dev/null || echo "{}"', {
+        timeout: 10000,
+      });
 
-      status.pid = lock.pid;
-      status.version = lock.version;
-      status.started_at = lock.started_at;
+      const gtStatus: GtStatusOutput = JSON.parse(stdout.trim() || '{}');
 
-      // Check if process is actually alive
-      status.alive = await checkProcessAlive(lock.pid);
+      // Find the deacon agent - check both name and role
+      const deacon = gtStatus.agents?.find(
+        (a) => a.name === 'deacon' || a.role === 'health-check' || a.role === 'deacon'
+      );
 
-      // Calculate uptime if alive
-      if (status.alive && lock.started_at) {
-        const startTime = new Date(lock.started_at).getTime();
-        const now = Date.now();
-        status.uptime_seconds = Math.floor((now - startTime) / 1000);
+      if (deacon) {
+        status.alive = deacon.running;
+        status.session = deacon.session;
+        status.role = deacon.role;
+        status.state = deacon.state;
+        status.has_work = deacon.has_work;
+        status.unread_mail = deacon.unread_mail;
       }
-    } catch {
-      // daemon.lock doesn't exist or is invalid - daemon not running
-      status.alive = false;
+    } catch (parseError) {
+      console.error('Failed to get gt deacon status:', parseError);
+      // Return default status on error
     }
-
-    // Get interval from logs
-    status.interval = await parseLogForInterval(logPath);
-
-    // Get last activity timestamp
-    status.last_activity = await getLastActivity(logPath);
-
-    // Get recent logs
-    status.recent_logs = await getRecentLogs(logPath, 5);
-
-    // Get error logs
-    status.error_logs = await getErrorLogs(logPath, 5);
 
     return NextResponse.json(status);
   } catch (error) {

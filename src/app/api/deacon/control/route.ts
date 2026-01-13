@@ -1,23 +1,15 @@
 /**
  * API Route: POST /api/deacon/control
- * Controls the deacon (daemon) - start/stop
+ * Controls the gt deacon - start/stop/restart
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-import path from 'path';
-
-const execAsync = promisify(exec);
+import { execGt } from '@/lib/exec-gt';
 
 export const dynamic = 'force-dynamic';
 
-function getBeadsPath(): string {
-  return process.env.BEADS_PATH ?? path.join(process.cwd(), '..', '..', '..', '.beads');
-}
-
 interface ControlRequest {
-  action: 'start' | 'stop' | 'restart';
+  action: 'start' | 'stop' | 'restart' | 'pause' | 'resume';
 }
 
 interface ControlResponse {
@@ -33,26 +25,30 @@ export async function POST(request: NextRequest) {
     const body: ControlRequest = await request.json();
     const { action } = body;
 
-    if (!action || !['start', 'stop', 'restart'].includes(action)) {
+    if (!action || !['start', 'stop', 'restart', 'pause', 'resume'].includes(action)) {
       return NextResponse.json(
-        { error: 'Invalid action. Must be start, stop, or restart' },
+        { error: 'Invalid action. Must be start, stop, restart, pause, or resume' },
         { status: 400 }
       );
     }
 
-    const beadsPath = getBeadsPath();
-    const dbPath = path.join(beadsPath, 'beads.db');
-
+    // Use gt deacon commands
     let command: string;
     switch (action) {
       case 'start':
-        command = `bd daemon --start --db "${dbPath}"`;
+        command = 'gt deacon start';
         break;
       case 'stop':
-        command = `bd daemon --stop --db "${dbPath}"`;
+        command = 'gt deacon stop';
         break;
       case 'restart':
-        command = `bd daemon restart --db "${dbPath}"`;
+        command = 'gt deacon restart';
+        break;
+      case 'pause':
+        command = 'gt deacon pause';
+        break;
+      case 'resume':
+        command = 'gt deacon resume';
         break;
       default:
         return NextResponse.json(
@@ -68,9 +64,8 @@ export async function POST(request: NextRequest) {
     };
 
     try {
-      const { stdout, stderr } = await execAsync(command, {
-        cwd: path.dirname(beadsPath),
-        timeout: 10000, // 10 second timeout
+      const { stdout, stderr } = await execGt(command, {
+        timeout: 10000,
       });
 
       response.success = true;
@@ -78,12 +73,27 @@ export async function POST(request: NextRequest) {
       response.output = stdout || stderr || '';
     } catch (execError) {
       const error = execError as { stdout?: string; stderr?: string; message?: string };
-      // Some commands exit with non-zero but are still successful
-      // e.g., stop when already stopped
-      response.success = false;
-      response.message = `Deacon ${action} command failed`;
-      response.error = error.stderr || error.message || 'Unknown error';
-      response.output = error.stdout || '';
+      const errorMessage = error.stderr || error.message || '';
+      const output = error.stdout || '';
+
+      // Handle cases where the command "fails" but the desired state is achieved
+      const alreadyRunning = errorMessage.includes('session already running') || errorMessage.includes('already running');
+      const alreadyStopped = errorMessage.includes('not running') || errorMessage.includes('no deacon');
+
+      if (action === 'start' && alreadyRunning) {
+        response.success = true;
+        response.message = 'Deacon is already running';
+        response.output = output;
+      } else if (action === 'stop' && alreadyStopped) {
+        response.success = true;
+        response.message = 'Deacon is already stopped';
+        response.output = output;
+      } else {
+        response.success = false;
+        response.message = `Deacon ${action} command failed`;
+        response.error = errorMessage;
+        response.output = output;
+      }
     }
 
     return NextResponse.json(response);

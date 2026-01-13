@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NavBar } from '@/components/layout';
 import { useConfig } from '@/lib/use-config';
 import { ProjectCard, ProjectForm, ConfirmModal } from '@/components/settings';
@@ -15,11 +15,39 @@ export default function Settings() {
     updateProject,
     deleteProject,
     setActiveProject,
+    setGtBasePath,
   } = useConfig();
 
   const [showProjectForm, setShowProjectForm] = useState(false);
   const [editingProject, setEditingProject] = useState<ProjectConfig | null>(null);
   const [deletingProject, setDeletingProject] = useState<ProjectConfig | null>(null);
+  const [gtBasePathInput, setGtBasePathInput] = useState<string>('');
+  const [gtBasePathDirty, setGtBasePathDirty] = useState(false);
+  const [savingGtPath, setSavingGtPath] = useState(false);
+
+  // Initialize gtBasePathInput when config loads
+  useEffect(() => {
+    if (!isLoading && config.gtBasePath !== undefined) {
+      setGtBasePathInput(config.gtBasePath || '');
+    }
+  }, [isLoading, config.gtBasePath]);
+
+  const handleGtBasePathChange = (value: string) => {
+    setGtBasePathInput(value);
+    setGtBasePathDirty(value !== (config.gtBasePath || ''));
+  };
+
+  const handleSaveGtBasePath = async () => {
+    setSavingGtPath(true);
+    try {
+      await setGtBasePath(gtBasePathInput);
+      setGtBasePathDirty(false);
+    } catch (err) {
+      console.error('Failed to save gtBasePath:', err);
+    } finally {
+      setSavingGtPath(false);
+    }
+  };
 
   const handleAddProject = () => {
     setEditingProject(null);
@@ -191,6 +219,46 @@ export default function Settings() {
                 >
                   Auto-refresh data
                 </label>
+              </div>
+            </div>
+          </div>
+
+          {/* Gas Town Path Configuration */}
+          <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+            <h3 className="text-lg font-medium text-zinc-900 dark:text-zinc-100">
+              Gas Town Path
+            </h3>
+            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+              Configure the path to your Gas Town root directory (contains .gt folder)
+            </p>
+            <div className="mt-4 space-y-4">
+              <div>
+                <label
+                  htmlFor="gt-base-path"
+                  className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+                >
+                  Gas Town Root Path
+                </label>
+                <div className="mt-1 flex gap-2">
+                  <input
+                    type="text"
+                    id="gt-base-path"
+                    value={gtBasePathInput}
+                    onChange={(e) => handleGtBasePathChange(e.target.value)}
+                    placeholder="~/my-project or /absolute/path"
+                    className="block w-full max-w-lg rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                  />
+                  <button
+                    onClick={handleSaveGtBasePath}
+                    disabled={!gtBasePathDirty || savingGtPath}
+                    className="px-4 py-2 text-sm rounded-md bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:hover:bg-zinc-200 dark:text-zinc-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {savingGtPath ? 'Saving...' : 'Save'}
+                  </button>
+                </div>
+                <p className="mt-1 text-xs text-zinc-500">
+                  Leave empty to auto-detect from the current working directory. Supports ~ for home directory.
+                </p>
               </div>
             </div>
           </div>

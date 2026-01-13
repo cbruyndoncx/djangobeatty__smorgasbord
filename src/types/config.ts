@@ -55,6 +55,10 @@ export interface DashboardConfig {
    * Dashboard always shows all detected rigs.
    */
   mode?: DashboardMode;
+  /** Path to the Gas Town root directory (contains .gt folder) */
+  gtBasePath?: string;
+  /** Additional directories to prepend to PATH when executing gt/bd commands */
+  binPaths?: string[];
   /** List of configured projects (optional - rigs auto-detected from gt status) */
   projects: ProjectConfig[];
   /** Currently active project ID (for filtering, not data source selection) */

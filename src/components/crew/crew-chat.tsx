@@ -59,7 +59,7 @@ export function CrewChat({ member, onSendMessage, className = '' }: CrewChatProp
   if (!member) {
     return (
       <div
-        className={`rounded-lg border border-zinc-800 bg-zinc-900/50 p-6 flex items-center justify-center ${className}`}
+        className={`rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 p-6 flex items-center justify-center shadow-sm dark:shadow-none ${className}`}
       >
         <p className="text-sm text-zinc-500">
           Select a crew member to view their inbox
@@ -70,14 +70,14 @@ export function CrewChat({ member, onSendMessage, className = '' }: CrewChatProp
 
   return (
     <div
-      className={`rounded-lg border border-zinc-800 bg-zinc-900/50 flex flex-col ${className}`}
+      className={`rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 flex flex-col shadow-sm dark:shadow-none ${className}`}
     >
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-zinc-800 p-4">
+      <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 p-4">
         <div className="flex items-center gap-3">
-          <h3 className="text-lg font-semibold text-white">{member.name}</h3>
+          <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">{member.name}</h3>
           {unreadCount > 0 && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border border-yellow-300 dark:border-yellow-500/30">
               {unreadCount} unread
             </span>
           )}
@@ -99,22 +99,22 @@ export function CrewChat({ member, onSendMessage, className = '' }: CrewChatProp
               key={msg.id}
               className={`max-w-[80%] rounded-lg border p-3 ${
                 msg.from === 'dashboard'
-                  ? 'ml-auto bg-blue-500/10 border-blue-500/30'
-                  : 'bg-zinc-800/50 border-zinc-700'
+                  ? 'ml-auto bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/30'
+                  : 'bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700'
               }`}
             >
               <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-medium text-zinc-400">
+                <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
                   {msg.from}
                 </span>
-                <span className="text-xs text-zinc-600">
+                <span className="text-xs text-zinc-500 dark:text-zinc-600">
                   {formatRelativeTime(msg.timestamp)}
                 </span>
               </div>
               {msg.subject && (
                 <div className="text-xs text-zinc-500 mb-1">{msg.subject}</div>
               )}
-              <p className="text-sm text-white whitespace-pre-wrap">{msg.body}</p>
+              <p className="text-sm text-zinc-900 dark:text-white whitespace-pre-wrap">{msg.body}</p>
             </div>
           ))
         )}
@@ -122,9 +122,9 @@ export function CrewChat({ member, onSendMessage, className = '' }: CrewChatProp
       </div>
 
       {/* Input */}
-      <div className="border-t border-zinc-800 p-4">
+      <div className="border-t border-zinc-200 dark:border-zinc-800 p-4">
         {error && (
-          <p className="text-xs text-red-400 mb-2">{error}</p>
+          <p className="text-xs text-red-600 dark:text-red-400 mb-2">{error}</p>
         )}
         <div className="flex gap-2">
           <textarea
@@ -133,7 +133,7 @@ export function CrewChat({ member, onSendMessage, className = '' }: CrewChatProp
             onKeyDown={handleKeyDown}
             placeholder={`Message ${member.name}...`}
             rows={2}
-            className="flex-1 resize-none rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white placeholder-zinc-500 focus:border-zinc-600 focus:outline-none"
+            className="flex-1 resize-none rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-white placeholder-zinc-500 focus:border-zinc-400 dark:focus:border-zinc-600 focus:outline-none"
             disabled={sending}
           />
           <button
@@ -144,7 +144,7 @@ export function CrewChat({ member, onSendMessage, className = '' }: CrewChatProp
             {sending ? 'Sending...' : 'Send'}
           </button>
         </div>
-        <p className="mt-1 text-xs text-zinc-600">
+        <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-600">
           Press Enter to send, Shift+Enter for new line
         </p>
       </div>

@@ -5,10 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-
-const execAsync = promisify(exec);
+import { execGt } from '@/lib/exec-gt';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,7 +38,7 @@ export async function POST(request: NextRequest) {
       : DEFAULT_NUDGE_MESSAGE;
     const escapedMessage = nudgeMessage.replace(/'/g, "'\\''");
 
-    const { stdout, stderr } = await execAsync(
+    const { stdout, stderr } = await execGt(
       `gt nudge ${sanitizedRig}/witness -m '${escapedMessage}'`
     );
 
@@ -54,6 +51,16 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error nudging witness:', error);
     const message = error instanceof Error ? error.message : 'Unknown error';
+
+    // Check if error is due to witness not running
+    const errorMsg = message.toLowerCase();
+    if (errorMsg.includes('no session') || errorMsg.includes('not found') || errorMsg.includes('does not exist')) {
+      return NextResponse.json(
+        { error: 'Witness not running. Start the witness first.', details: message },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json(
       { error: 'Failed to nudge witness', details: message },
       { status: 500 }

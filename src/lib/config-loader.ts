@@ -252,7 +252,7 @@ export async function createDefaultConfig(): Promise<ConfigResult<DashboardConfi
         active: true,
       }];
       config.activeProject = config.projects[0].id;
-      config.mode = 'single';
+      // mode is deprecated - rigs auto-detected from gt status
     }
 
     config.updatedAt = new Date().toISOString();
@@ -389,7 +389,7 @@ export async function addProject(
   const newConfig = {
     ...config,
     projects: [...config.projects, project],
-    mode: config.projects.length >= 1 ? 'multi' as DashboardMode : config.mode,
+    // mode is deprecated - rigs auto-detected from gt status
   };
 
   // If this is the first project, make it active
@@ -416,7 +416,7 @@ export function removeProject(
   const newConfig = {
     ...config,
     projects: newProjects,
-    mode: newProjects.length <= 1 ? 'single' as DashboardMode : 'multi' as DashboardMode,
+    // mode is deprecated - rigs auto-detected from gt status
   };
 
   // Update active project if removed

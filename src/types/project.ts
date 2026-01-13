@@ -83,11 +83,10 @@ export interface NavItem {
 }
 
 export const NAV_ITEMS: NavItem[] = [
-  { href: '/', label: 'Dashboard' },
-  { href: '/polecats', label: 'Polecats', feature: 'polecats' },
-  { href: '/convoys', label: 'Convoys', feature: 'convoys' },
-  { href: '/witnesses', label: 'Witnesses', feature: 'witnesses' },
-  { href: '/crew', label: 'Crew', feature: 'crew' },
-  { href: '/control-plane', label: 'Control Plane', feature: 'controlPlane' },
+  { href: '/', label: 'Command Centre' },
+  { href: '/work', label: 'Work', feature: 'kanban' },
+  { href: '/workers', label: 'Workers', feature: 'polecats' }, // Combined polecats + crew
+  { href: '/system', label: 'Engine Room', feature: 'witnesses' }, // Deacon + witnesses + refineries + dogs + boot
+  { href: '/mailbox', label: 'Mailbox', feature: 'controlPlane' },
   { href: '/settings', label: 'Settings' },
 ];

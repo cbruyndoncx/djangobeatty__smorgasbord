@@ -11,6 +11,7 @@ interface ContextMenuProps {
   onStatusChange?: (issue: Issue, status: IssueStatus) => void;
   onAssign?: (issue: Issue) => void;
   onViewDetails?: (issue: Issue) => void;
+  onEscalate?: (issue: Issue) => void;
 }
 
 const statusOptions: { value: IssueStatus; label: string }[] = [
@@ -28,6 +29,7 @@ export function ContextMenu({
   onStatusChange,
   onAssign,
   onViewDetails,
+  onEscalate,
 }: ContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -134,6 +136,22 @@ export function ContextMenu({
         >
           <span className="w-4 text-center">👤</span>
           Assign...
+        </button>
+      </div>
+
+      <div className="border-t border-zinc-100 dark:border-zinc-700">
+        <button
+          onClick={() => {
+            onEscalate?.(issue);
+            onClose();
+          }}
+          className={cn(
+            'flex w-full items-center gap-2 px-3 py-2 text-left text-sm',
+            'text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-900/20 font-medium'
+          )}
+        >
+          <span className="w-4 text-center">🚨</span>
+          Escalate to Mayor
         </button>
       </div>
     </div>

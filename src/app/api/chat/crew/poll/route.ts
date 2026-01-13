@@ -8,10 +8,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-
-const execAsync = promisify(exec);
+import { execGt } from '@/lib/exec-gt';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,7 +43,7 @@ export async function GET(request: Request) {
 
     try {
       // Get mail inbox in JSON format
-      const { stdout } = await execAsync('gt mail inbox --json', {
+      const { stdout } = await execGt('gt mail inbox --json', {
         cwd: basePath,
         timeout: 10000,
       });

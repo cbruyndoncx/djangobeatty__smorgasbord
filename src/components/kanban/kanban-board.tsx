@@ -5,12 +5,15 @@ import type { Issue, IssueStatus, Priority } from '@/types/beads';
 import { KanbanColumn } from './kanban-column';
 import { FilterBar } from './filter-bar';
 import { SearchBox } from './search-box';
-import { IssueDetailModal } from './issue-detail-modal';
 import { ContextMenu } from './context-menu';
+import { AlertModal } from '@/components/settings';
 
 interface KanbanBoardProps {
   issues: Issue[];
   onStatusChange?: (issue: Issue, newStatus: IssueStatus) => void;
+  highlightedIssueId?: string | null;
+  selectedIssue?: Issue | null;
+  onSelectIssue?: (issue: Issue | null) => void;
 }
 
 // Map statuses to columns
@@ -29,7 +32,7 @@ const columns = [
   { id: 'closed', title: 'Closed', statuses: ['closed'] as IssueStatus[] },
 ];
 
-export function KanbanBoard({ issues, onStatusChange }: KanbanBoardProps) {
+export function KanbanBoard({ issues, onStatusChange, highlightedIssueId, selectedIssue, onSelectIssue }: KanbanBoardProps) {
   // Filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRig, setSelectedRig] = useState<string | null>(null);
@@ -40,12 +43,20 @@ export function KanbanBoard({ issues, onStatusChange }: KanbanBoardProps) {
   const [draggedIssue, setDraggedIssue] = useState<Issue | null>(null);
   const [dropTargetColumn, setDropTargetColumn] = useState<string | null>(null);
 
-  // Modal state
-  const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
-
   // Context menu state
   const [contextMenuIssue, setContextMenuIssue] = useState<Issue | null>(null);
   const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number } | null>(null);
+
+  // Escalation modal state
+  const [escalateIssue, setEscalateIssue] = useState<Issue | null>(null);
+  const [escalateMessage, setEscalateMessage] = useState('');
+
+  // Alert modal state
+  const [alertModal, setAlertModal] = useState<{
+    title: string;
+    message: string;
+    variant: 'info' | 'success' | 'error' | 'warning';
+  } | null>(null);
 
   // Extract unique rigs and assignees
   const { rigs, assignees } = useMemo(() => {
@@ -185,6 +196,51 @@ export function KanbanBoard({ issues, onStatusChange }: KanbanBoardProps) {
     setSearchQuery('');
   }, []);
 
+  const handleEscalateFromMenu = useCallback((issue: Issue) => {
+    setEscalateIssue(issue);
+  }, []);
+
+  const handleSendEscalation = useCallback(async () => {
+    if (!escalateIssue) return;
+
+    try {
+      const response = await fetch(`/api/beads/issues/${escalateIssue.id}/escalate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: escalateMessage.trim() || undefined }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Failed to escalate issue:', errorData);
+        setAlertModal({
+          title: 'Escalation Failed',
+          message: errorData.error || 'Unknown error',
+          variant: 'error',
+        });
+        return;
+      }
+
+      const result = await response.json();
+      console.log('Escalate result:', result);
+      setAlertModal({
+        title: 'Issue Escalated',
+        message: result.message || `Escalated issue "${escalateIssue.title}" to mayor`,
+        variant: 'success',
+      });
+
+      setEscalateIssue(null);
+      setEscalateMessage('');
+    } catch (error) {
+      console.error('Error escalating issue:', error);
+      setAlertModal({
+        title: 'Escalation Failed',
+        message: 'Failed to escalate issue. Check console for details.',
+        variant: 'error',
+      });
+    }
+  }, [escalateIssue, escalateMessage]);
+
   return (
     <div className="space-y-4">
       {/* Search and Filters */}
@@ -222,18 +278,16 @@ export function KanbanBoard({ issues, onStatusChange }: KanbanBoardProps) {
             title={column.title}
             status={column.id}
             issues={issuesByColumn[column.id] || []}
-            onIssueClick={setSelectedIssue}
+            onIssueClick={onSelectIssue}
             onIssueDragStart={handleDragStart}
             onIssueContextMenu={handleContextMenu}
             onDragOver={() => handleDragOver(column.id)}
             onDrop={handleDrop}
             isDropTarget={dropTargetColumn === column.id}
+            highlightedIssueId={highlightedIssueId}
           />
         ))}
       </div>
-
-      {/* Issue Detail Modal */}
-      <IssueDetailModal issue={selectedIssue} onClose={() => setSelectedIssue(null)} />
 
       {/* Context Menu */}
       <ContextMenu
@@ -241,8 +295,72 @@ export function KanbanBoard({ issues, onStatusChange }: KanbanBoardProps) {
         position={contextMenuPosition}
         onClose={handleCloseContextMenu}
         onStatusChange={handleStatusChangeFromMenu}
-        onViewDetails={(issue) => setSelectedIssue(issue)}
+        onViewDetails={onSelectIssue}
+        onEscalate={handleEscalateFromMenu}
       />
+
+      {/* Escalation Modal */}
+      {escalateIssue && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          onClick={() => {
+            setEscalateIssue(null);
+            setEscalateMessage('');
+          }}
+        >
+          <div
+            className="bg-white dark:bg-zinc-900 rounded-lg p-6 max-w-md w-full mx-4 border border-zinc-200 dark:border-zinc-700"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
+              Escalate to Mayor
+            </h3>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-1">
+              Issue: {escalateIssue.title}
+            </p>
+            <p className="text-xs text-zinc-500 dark:text-zinc-500 mb-4 font-mono">
+              {escalateIssue.id}
+            </p>
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+              Optional Message
+            </label>
+            <textarea
+              value={escalateMessage}
+              onChange={(e) => setEscalateMessage(e.target.value)}
+              placeholder="Add context about why this needs attention..."
+              className="w-full rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 resize-none"
+              rows={4}
+            />
+            <div className="flex gap-2 mt-4">
+              <button
+                onClick={handleSendEscalation}
+                className="flex-1 px-4 py-2 text-sm rounded bg-amber-500 hover:bg-amber-600 text-white transition-colors font-medium"
+              >
+                Send Escalation
+              </button>
+              <button
+                onClick={() => {
+                  setEscalateIssue(null);
+                  setEscalateMessage('');
+                }}
+                className="flex-1 px-4 py-2 text-sm rounded bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-700 dark:text-zinc-300 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Alert Modal */}
+      {alertModal && (
+        <AlertModal
+          title={alertModal.title}
+          message={alertModal.message}
+          variant={alertModal.variant}
+          onClose={() => setAlertModal(null)}
+        />
+      )}
     </div>
   );
 }

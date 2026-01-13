@@ -5,10 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-
-const execAsync = promisify(exec);
+import { execGt } from '@/lib/exec-gt';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,7 +30,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { stdout, stderr } = await execAsync(`gt witness start ${sanitizedRig}`);
+    const { stdout, stderr } = await execGt(`gt witness start ${sanitizedRig}`);
 
     return NextResponse.json({
       success: true,

@@ -14,6 +14,7 @@ interface KanbanColumnProps {
   onDragOver?: (e: React.DragEvent) => void;
   onDrop?: (e: React.DragEvent, status: string) => void;
   isDropTarget?: boolean;
+  highlightedIssueId?: string | null;
 }
 
 const columnConfig: Record<string, { color: string; bgColor: string }> = {
@@ -45,6 +46,7 @@ export function KanbanColumn({
   onDragOver,
   onDrop,
   isDropTarget,
+  highlightedIssueId,
 }: KanbanColumnProps) {
   const config = columnConfig[status] || columnConfig.open;
 
@@ -103,6 +105,7 @@ export function KanbanColumn({
               onClick={onIssueClick}
               onDragStart={onIssueDragStart}
               onContextMenu={onIssueContextMenu}
+              isHighlighted={highlightedIssueId === issue.id}
             />
           ))
         )}

@@ -4,10 +4,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-
-const execAsync = promisify(exec);
+import { execGt } from '@/lib/exec-gt';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,7 +33,7 @@ export async function POST(request: Request) {
     // Send mail using gt mail send
     const command = `gt mail send '${to}' -s '${escapedSubject}' -m '${escapedMessage}'`;
 
-    await execAsync(command, { timeout: 10000 });
+    await execGt(command, { timeout: 10000 });
 
     return NextResponse.json({ success: true });
   } catch (error) {

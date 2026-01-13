@@ -4,11 +4,8 @@
  */
 
 import { NextResponse } from 'next/server';
-import { exec } from 'child_process';
-import { promisify } from 'util';
 import type { CrewMessage } from '@/types/crew';
-
-const execAsync = promisify(exec);
+import { execGt } from '@/lib/exec-gt';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,7 +31,7 @@ export async function GET(request: Request) {
     const memberName = member.split('/').pop();
 
     // Use gt mail inbox for the crew member
-    const { stdout } = await execAsync(
+    const { stdout } = await execGt(
       `gt mail inbox ${member}`,
       { timeout: 10000 }
     );

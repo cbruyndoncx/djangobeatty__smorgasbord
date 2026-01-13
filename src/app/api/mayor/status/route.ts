@@ -4,13 +4,10 @@
  */
 
 import { NextResponse } from 'next/server';
-import { exec } from 'child_process';
-import { promisify } from 'util';
+import { getGtStatus } from '@/lib/exec-gt';
 import type { MayorState, MayorStatus, MayorSessionInfo } from '@/types/mayor';
 
 export const dynamic = 'force-dynamic';
-
-const execAsync = promisify(exec);
 
 interface GtAgent {
   name: string;
@@ -67,13 +64,13 @@ function parseLastActivity(lastActivityStr: string | undefined): string {
 
 async function getMayorStatus(): Promise<MayorState> {
   try {
-    // Try to get mayor status via gt status command
-    const { stdout } = await execAsync('gt status --json 2>/dev/null || echo "{}"', {
-      timeout: 5000,
-      cwd: process.env.GT_BASE_PATH || process.cwd(),
-    });
+    // Use getGtStatus which handles caching and proper directory detection
+    const data = await getGtStatus<GtStatusOutput>();
 
-    const data: GtStatusOutput = JSON.parse(stdout.trim() || '{}');
+    if (!data) {
+      console.error('[Mayor Status] getGtStatus returned null');
+      return { status: 'offline', session: null };
+    }
 
     // Look for mayor in agents array (current gt status format)
     const mayorAgent = data.agents?.find(agent => agent.name === 'mayor');

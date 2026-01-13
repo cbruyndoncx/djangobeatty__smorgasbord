@@ -4,12 +4,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { exec } from 'child_process';
-import { promisify } from 'util';
+import { execGt } from '@/lib/exec-gt';
 
 export const dynamic = 'force-dynamic';
-
-const execAsync = promisify(exec);
 
 interface NudgeRequest {
   message: string;
@@ -46,7 +43,7 @@ export async function POST(request: NextRequest) {
 
     try {
       // Execute gt nudge mayor command
-      const { stdout, stderr } = await execAsync(
+      const { stdout, stderr } = await execGt(
         `gt nudge mayor '${escapedMessage}'`,
         {
           timeout: 10000,
