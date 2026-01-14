@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { NavBar } from '@/components/layout';
 import { useRigs } from '@/lib/use-rigs';
 import { useTheme } from '@/lib/theme-provider';
@@ -60,6 +60,16 @@ export default function Settings() {
   const [newRigPrefix, setNewRigPrefix] = useState('');
   const [addingRig, setAddingRig] = useState(false);
   const [addRigError, setAddRigError] = useState<string | null>(null);
+
+  // Validate rig name (hyphens, dots, spaces reserved for agent ID parsing)
+  const rigNameValidation = useMemo(() => {
+    if (!newRigName.trim()) return null;
+    if (/[-.\s]/.test(newRigName)) {
+      const suggested = newRigName.replace(/[-.\s]+/g, '_');
+      return `Hyphens, dots, and spaces are reserved for agent ID parsing. Try "${suggested}" instead.`;
+    }
+    return null;
+  }, [newRigName]);
 
   // Feature mode state
   const [featureMode, setFeatureMode] = useState<FeatureMode>('gastown');
@@ -240,9 +250,13 @@ export default function Settings() {
                         id="new-rig-name"
                         value={newRigName}
                         onChange={(e) => setNewRigName(e.target.value)}
-                        placeholder="my-project"
+                        placeholder="my_project"
                         disabled={addingRig}
+                        className={rigNameValidation ? 'border-destructive' : ''}
                       />
+                      {rigNameValidation && (
+                        <p className="text-xs text-destructive">{rigNameValidation}</p>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="new-rig-prefix">Prefix (optional)</Label>
@@ -268,7 +282,7 @@ export default function Settings() {
                   {addRigError && (
                     <p className="text-sm text-destructive">{addRigError}</p>
                   )}
-                  <Button onClick={handleAddRig} disabled={addingRig}>
+                  <Button onClick={handleAddRig} disabled={addingRig || !!rigNameValidation}>
                     {addingRig ? 'Adding... (this may take a minute)' : 'Add Rig'}
                   </Button>
                 </div>
