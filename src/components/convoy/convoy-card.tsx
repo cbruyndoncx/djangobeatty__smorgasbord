@@ -1,6 +1,7 @@
 'use client';
 
 import { cn, formatRelativeTime } from '@/lib/utils';
+import { useTheme } from '@/lib/theme-provider';
 import type { Convoy, Issue } from '@/types/beads';
 
 interface ConvoyCardProps {
@@ -11,6 +12,8 @@ interface ConvoyCardProps {
 }
 
 export function ConvoyCard({ convoy, issues = [], onClick, onContextMenu }: ConvoyCardProps) {
+  const { theme } = useTheme();
+  const isKawaii = theme === 'smorgasbord';
 
   // Status configuration matching beads pattern
   const statusConfig = {
@@ -54,7 +57,7 @@ export function ConvoyCard({ convoy, issues = [], onClick, onContextMenu }: Conv
       {/* Header - matches beads style */}
       <div className="flex items-start justify-between gap-2 mb-3">
         <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
-          <span className="text-base">⛟</span>
+          <span className="text-base">{isKawaii ? '🚚' : '⛟'}</span>
           <span className="font-mono">{convoy.id}</span>
         </div>
         <div className="flex items-center gap-2">

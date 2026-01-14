@@ -8,6 +8,7 @@ import { ConvoyList, ConvoyContextMenu, ConvoyDetailModal } from '@/components/c
 import { NavBar } from '@/components/layout';
 import { AlertModal } from '@/components/settings';
 import { FeatureGate } from '@/lib/project-mode';
+import { useTheme } from '@/lib/theme-provider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -17,6 +18,8 @@ import type { Issue, IssueStatus, Convoy } from '@/types/beads';
 function WorkPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { theme } = useTheme();
+  const isKawaii = theme === 'smorgasbord';
   const { issues, isLoading: issuesLoading, error: issuesError, refresh: refreshIssues, updateIssue } = useIssues();
   const { convoys, isLoading: convoysLoading, error: convoysError } = useConvoys();
   const [selectedConvoy, setSelectedConvoy] = useState<Convoy | null>(null);
@@ -290,31 +293,31 @@ function WorkPageContent() {
               ) : !error && (
                 <div className="flex items-center gap-6 text-sm">
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-foreground">
+                    <p className={cn("text-2xl font-bold text-foreground", isKawaii && "kawaii-stat")}>
                       {filteredConvoys.length}
                     </p>
                     <p className="text-muted-foreground">Total</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-green-400">{activeCount}</p>
+                    <p className={cn("text-2xl font-bold text-green-400", isKawaii && "kawaii-stat")}>{activeCount}</p>
                     <p className="text-muted-foreground">Active</p>
                   </div>
                   {stalledCount > 0 && (
                     <div className="text-center">
-                      <p className="text-2xl font-bold text-amber-400">
+                      <p className={cn("text-2xl font-bold text-amber-400", isKawaii && "kawaii-stat")}>
                         {stalledCount}
                       </p>
                       <p className="text-muted-foreground">Stalled</p>
                     </div>
                   )}
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-purple-400">
+                    <p className={cn("text-2xl font-bold text-purple-400", isKawaii && "kawaii-stat")}>
                       {completedCount}
                     </p>
                     <p className="text-muted-foreground">Completed</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-blue-400">
+                    <p className={cn("text-2xl font-bold text-blue-400", isKawaii && "kawaii-stat")}>
                       {overallProgress}%
                     </p>
                     <p className="text-muted-foreground">Progress</p>
@@ -485,7 +488,8 @@ function WorkPageContent() {
 
         {/* Work Status Section */}
         <div ref={kanbanRef} className="mb-6 flex items-center justify-between">
-          <div>
+          <div className="flex items-center gap-3">
+            {isKawaii && <span className="text-4xl">📿</span>}
             <h2 className="text-2xl font-bold text-foreground">
               Beads
             </h2>

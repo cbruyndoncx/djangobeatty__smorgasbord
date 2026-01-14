@@ -36,6 +36,7 @@ export default function Settings() {
   } = useRigs();
 
   const { theme, setTheme } = useTheme();
+  const isKawaii = theme === 'smorgasbord';
   const { isBeadsOnly } = useProjectMode();
 
   // GT info state
@@ -187,11 +188,14 @@ export default function Settings() {
       <NavBar />
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-foreground">Settings</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Configure your dashboard preferences
-          </p>
+        <div className="mb-8 flex items-center gap-3">
+          {isKawaii && <span className="text-4xl">⚙️</span>}
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">Settings</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Configure your dashboard preferences
+            </p>
+          </div>
         </div>
 
         {error && (
@@ -206,16 +210,21 @@ export default function Settings() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
               <div>
-                <CardTitle>Rigs</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  {isKawaii && <span>🏗️</span>}
+                  Rigs
+                </CardTitle>
                 <CardDescription>
                   Manage Gas Town rigs (project containers wrapping git repositories)
                 </CardDescription>
               </div>
               <div className="flex gap-2">
                 <Button onClick={() => setShowAddForm(!showAddForm)} variant="default" size="sm">
+                  {isKawaii && <span className="mr-1">{showAddForm ? '❌' : '➕'}</span>}
                   {showAddForm ? 'Cancel' : 'Add Rig'}
                 </Button>
                 <Button onClick={refreshRigs} variant="outline" size="sm">
+                  {isKawaii && <span className="mr-1">🔄</span>}
                   Refresh
                 </Button>
               </div>
@@ -298,7 +307,10 @@ export default function Settings() {
           {/* Display Settings Section */}
           <Card>
             <CardHeader>
-              <CardTitle>Display Settings</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                {isKawaii && <span>🎨</span>}
+                Display Settings
+              </CardTitle>
               <CardDescription>
                 Configure the dashboard appearance
               </CardDescription>
@@ -310,13 +322,13 @@ export default function Settings() {
                   value={theme}
                   onChange={(value) => setTheme(value as VisualTheme)}
                   options={[
+                    { value: 'smorgasbord', label: 'envs.now' },
                     { value: 'corporate', label: 'Corporate' },
-                    { value: 'smorgasbord', label: 'Smorgasbord' },
                   ]}
                   className="max-w-xs"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Corporate is the default clean look. Smorgasbord is... different.
+                  envs.now is the default kawaii theme. Corporate is a clean professional look.
                 </p>
               </div>
 
@@ -348,7 +360,10 @@ export default function Settings() {
           {isBeadsOnly && (
           <Card>
             <CardHeader>
-              <CardTitle>Beads Path</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                {isKawaii && <span>📿</span>}
+                Beads Path
+              </CardTitle>
               <CardDescription>
                 Path to your .beads directory (contains beads.db)
               </CardDescription>
@@ -399,7 +414,10 @@ export default function Settings() {
           {!isBeadsOnly && (
           <Card>
             <CardHeader>
-              <CardTitle>Gas Town Path</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                {isKawaii && <span>⛽</span>}
+                Gas Town Path
+              </CardTitle>
               <CardDescription>
                 Path to your Gas Town root directory (contains .gt folder and rigs)
               </CardDescription>
@@ -448,7 +466,10 @@ export default function Settings() {
           {/* Configuration Info */}
           <Card>
             <CardHeader>
-              <CardTitle>Configuration</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                {isKawaii && <span>📋</span>}
+                Configuration
+              </CardTitle>
               <CardDescription>
                 Configuration file information
               </CardDescription>

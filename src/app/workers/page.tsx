@@ -3,12 +3,15 @@
 import { useState, useCallback, useEffect } from 'react';
 import { usePolecats, useRigs } from '@/lib/use-beads';
 import { useCrewStatus } from '@/lib/use-crew';
+import { useTheme } from '@/lib/theme-provider';
 import { NavBar } from '@/components/layout';
 import { ConfirmModal } from '@/components/settings';
 import { Select } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 
 export default function WorkersPage() {
+  const { theme } = useTheme();
+  const isKawaii = theme === 'smorgasbord';
   const { polecats, isLoading: polecatsLoading, refresh: refreshPolecats } = usePolecats();
   const { crewState, isLoading: crewLoading, refresh: refreshCrew } = useCrewStatus();
   const { rigs } = useRigs();
@@ -468,13 +471,16 @@ export default function WorkersPage() {
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">
-              Workers
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              All crew members and polecats in your Gas Town system
-            </p>
+          <div className="flex items-center gap-3">
+            {isKawaii && <span className="text-4xl">👷</span>}
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">
+                Crew
+              </h1>
+              <p className="mt-1 text-sm text-muted-foreground">
+                All crew members and polecats in your Gas Town system
+              </p>
+            </div>
           </div>
           <div className="flex gap-2">
             <Button
@@ -483,6 +489,7 @@ export default function WorkersPage() {
               size="sm"
               className="border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-400 dark:hover:bg-emerald-900"
             >
+              {isKawaii && <span className="mr-1">➕</span>}
               {showAddCrewForm ? 'Cancel' : 'Add Crew'}
             </Button>
             <Button
@@ -494,19 +501,23 @@ export default function WorkersPage() {
               variant="outline"
               size="sm"
             >
-              <svg
-                className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                />
-              </svg>
+              {isKawaii ? (
+                <span className={`mr-1 ${isLoading ? 'animate-spin inline-block' : ''}`}>🔄</span>
+              ) : (
+                <svg
+                  className={`h-4 w-4 mr-1 ${isLoading ? 'animate-spin' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+              )}
               Refresh
             </Button>
           </div>
@@ -585,26 +596,38 @@ export default function WorkersPage() {
         {/* Summary Stats */}
         <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-4">
           <div className="rounded-lg border border-border bg-card p-4">
-            <div className="text-2xl font-bold text-foreground">
-              {totalWorkers}
+            <div className="flex items-center gap-2">
+              {isKawaii && <span className="text-xl">👥</span>}
+              <div className="text-2xl font-bold text-foreground">
+                {totalWorkers}
+              </div>
             </div>
-            <div className="text-sm text-muted-foreground">Total Workers</div>
+            <div className="text-sm text-muted-foreground">Total Crew</div>
           </div>
           <div className="rounded-lg border border-border bg-card p-4">
-            <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-              {totalActive}
+            <div className="flex items-center gap-2">
+              {isKawaii && <span className="text-xl">⚡</span>}
+              <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                {totalActive}
+              </div>
             </div>
             <div className="text-sm text-muted-foreground">Active</div>
           </div>
           <div className="rounded-lg border border-border bg-card p-4">
-            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-              {totalWithMail}
+            <div className="flex items-center gap-2">
+              {isKawaii && <span className="text-xl">📬</span>}
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                {totalWithMail}
+              </div>
             </div>
             <div className="text-sm text-muted-foreground">With Mail</div>
           </div>
           <div className="rounded-lg border border-border bg-card p-4">
-            <div className="text-2xl font-bold text-muted-foreground">
-              {crew.length} / {polecats.length}
+            <div className="flex items-center gap-2">
+              {isKawaii && <span className="text-xl">🔢</span>}
+              <div className="text-2xl font-bold text-muted-foreground">
+                {crew.length} / {polecats.length}
+              </div>
             </div>
             <div className="text-sm text-muted-foreground">Crew / Polecats</div>
           </div>
@@ -655,7 +678,8 @@ export default function WorkersPage() {
             {/* Crew Section */}
             {crew.length > 0 && (
               <div>
-                <h2 className="mb-4 text-xl font-semibold text-foreground">
+                <h2 className="mb-4 text-xl font-semibold text-foreground flex items-center gap-2">
+                  {isKawaii && <span>🧑‍🔧</span>}
                   Crew Members ({crew.length})
                 </h2>
                 <div className="space-y-3">
@@ -803,7 +827,8 @@ export default function WorkersPage() {
             {/* Polecats Section */}
             {polecats.length > 0 && (
               <div>
-                <h2 className="mb-4 text-xl font-semibold text-foreground">
+                <h2 className="mb-4 text-xl font-semibold text-foreground flex items-center gap-2">
+                  {isKawaii && <span>🐾</span>}
                   Polecats ({polecats.length})
                 </h2>
                 <div className="space-y-3">

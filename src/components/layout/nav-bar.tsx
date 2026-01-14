@@ -4,11 +4,13 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useProjectMode } from '@/lib/project-mode';
+import { useTheme } from '@/lib/theme-provider';
 import { NAV_ITEMS } from '@/types/project';
 
 export function NavBar() {
   const pathname = usePathname();
   const { hasFeature, activeProject, isBeadsOnly } = useProjectMode();
+  const { theme } = useTheme();
 
   // Filter nav items based on current mode
   const visibleItems = NAV_ITEMS.filter((item) => {
@@ -16,13 +18,21 @@ export function NavBar() {
     return hasFeature(item.feature);
   });
 
+  const isSmorgasbord = theme === 'smorgasbord';
+
   return (
     <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-4">
-          <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
-            {activeProject?.name || 'Smorgasbord'}
-          </h1>
+          {isSmorgasbord ? (
+            <h1 className="text-2xl font-bold text-[#2D2A26]">
+              Smor<span className="text-[#FF5722]">gas</span>bord
+            </h1>
+          ) : (
+            <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
+              {activeProject?.name || 'Smorgasbord'}
+            </h1>
+          )}
           {isBeadsOnly && (
             <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
               Beads Only

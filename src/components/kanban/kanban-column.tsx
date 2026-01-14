@@ -3,6 +3,7 @@
 import { useRef, useEffect, useCallback } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { cn } from '@/lib/utils';
+import { useTheme } from '@/lib/theme-provider';
 import type { Issue } from '@/types/beads';
 import { IssueCard } from './issue-card';
 import { Loader2 } from 'lucide-react';
@@ -62,8 +63,18 @@ export function KanbanColumn({
   isDropTarget,
   highlightedIssueId,
 }: KanbanColumnProps) {
+  const { theme } = useTheme();
+  const isKawaii = theme === 'smorgasbord';
   const config = columnConfig[status] || columnConfig.open;
   const parentRef = useRef<HTMLDivElement>(null);
+
+  // Kawaii icons for each status
+  const kawaiiIcons: Record<string, string> = {
+    open: '📋',
+    in_progress: '⚡',
+    blocked: '🚧',
+    closed: '✅',
+  };
 
   // Set up virtualizer for efficient rendering of long lists
   const virtualizer = useVirtualizer({
@@ -133,10 +144,11 @@ export function KanbanColumn({
       >
         <h3
           className={cn(
-            'text-sm font-semibold uppercase tracking-wide',
+            'text-sm font-semibold uppercase tracking-wide flex items-center gap-1.5',
             config.color
           )}
         >
+          {isKawaii && <span>{kawaiiIcons[status] || '📌'}</span>}
           {title}
         </h3>
         <span

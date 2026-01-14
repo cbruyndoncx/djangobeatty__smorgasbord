@@ -79,7 +79,7 @@ export function Select({
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-1 w-full rounded-md border border-border bg-popover p-1 shadow-md animate-in fade-in-0 zoom-in-95">
+        <div className="select-dropdown absolute z-50 mt-1 min-w-full w-max rounded-md border border-border bg-popover p-1 shadow-md animate-in fade-in-0 zoom-in-95">
           {options.map((option) => (
             <button
               key={option.value}
@@ -89,7 +89,7 @@ export function Select({
                 setOpen(false);
               }}
               className={cn(
-                'relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none',
+                'select-option relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none',
                 'hover:bg-accent hover:text-accent-foreground',
                 'focus:bg-accent focus:text-accent-foreground',
                 option.value === value && 'bg-accent'

@@ -18,7 +18,7 @@ interface ThemeProviderProps {
   defaultTheme?: VisualTheme;
 }
 
-export function ThemeProvider({ children, defaultTheme = 'corporate' }: ThemeProviderProps) {
+export function ThemeProvider({ children, defaultTheme = 'smorgasbord' }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<VisualTheme>(defaultTheme);
   const [isLoading, setIsLoading] = useState(true);
 

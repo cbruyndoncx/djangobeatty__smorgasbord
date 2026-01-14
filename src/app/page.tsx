@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { useBeads, useConvoys, usePolecats } from '@/lib/use-beads';
 import { useGtStatus } from '@/lib/use-gt-status';
 import { FeatureGate } from '@/lib/project-mode';
+import { useTheme } from '@/lib/theme-provider';
 import { NavBar } from '@/components/layout';
 import type { Convoy, Issue, Polecat } from '@/types/beads';
 import type { GtRig, GtAgent } from '@/types/gt-status';
@@ -27,8 +28,10 @@ export default function Dashboard() {
   const { convoys, isLoading: convoysLoading, refresh: refreshConvoys } = useConvoys();
   const { polecats, isLoading: polecatsLoading } = usePolecats();
   const { status: gtStatus, isLoading: gtLoading } = useGtStatus();
+  const { theme } = useTheme();
 
   const isLoading = beadsLoading || convoysLoading || polecatsLoading || gtLoading;
+  const isKawaii = theme === 'smorgasbord';
 
   // Mail modal state
   const [isMailModalOpen, setIsMailModalOpen] = useState(false);
@@ -103,8 +106,8 @@ export default function Dashboard() {
   };
 
   const handleSendMail = async () => {
-    if (!mailSubject || !mailBody) {
-      setActionStatus({ type: 'error', text: 'Please fill in subject and message' });
+    if (!mailBody) {
+      setActionStatus({ type: 'error', text: 'Please enter a message' });
       return;
     }
 
@@ -324,9 +327,13 @@ export default function Dashboard() {
             disabled={isLoading}
             className="flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm font-medium text-foreground hover:bg-muted disabled:opacity-50"
           >
-            <svg className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
+            {isKawaii ? (
+              <span className={`text-lg ${isLoading ? 'animate-spin inline-block' : ''}`}>🔄</span>
+            ) : (
+              <svg className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            )}
             Refresh
           </button>
         </div>
@@ -345,11 +352,15 @@ export default function Dashboard() {
               <div className="flex items-center justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className={`flex h-10 w-10 items-center justify-center rounded-lg shadow-md ${gtLoading ? 'bg-muted-foreground' : mayorAgent?.running ? 'bg-primary' : 'bg-muted-foreground'}`}>
-                      <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
+                    {isKawaii ? (
+                      <span className="text-4xl">🎩</span>
+                    ) : (
+                      <div className={`flex h-10 w-10 items-center justify-center rounded-lg shadow-md ${gtLoading ? 'bg-muted-foreground' : mayorAgent?.running ? 'bg-primary' : 'bg-muted-foreground'}`}>
+                        <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                    )}
                     <div>
                       <div className="flex items-center gap-2">
                         <h2 className="text-2xl font-bold text-foreground">Mayor</h2>
@@ -410,9 +421,13 @@ export default function Dashboard() {
                   onClick={handleOpenMayorMail}
                   className="flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-md transition-all hover:bg-primary/90 hover:shadow-lg"
                 >
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                  </svg>
+                  {isKawaii ? (
+                    <span className="text-lg">📨</span>
+                  ) : (
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                  )}
                   Send Instructions
                 </button>
               </div>
@@ -425,9 +440,13 @@ export default function Dashboard() {
           <div className="mb-8 rounded-xl border border-border bg-card p-6 shadow-sm">
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <svg className="h-5 w-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
+                {isKawaii ? (
+                  <span className="text-xl">💌</span>
+                ) : (
+                  <svg className="h-5 w-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                )}
                 <h2 className="text-lg font-semibold text-foreground">Messages</h2>
                 {inboxMessages.filter(m => !m.read).length > 0 && (
                   <span className="rounded-full bg-primary/20 px-2 py-0.5 text-xs font-semibold text-primary">
@@ -557,9 +576,13 @@ export default function Dashboard() {
         {/* MIDDLE SECTION - Convoys & Beads */}
         <div className="mb-8">
           <div className="mb-4 flex items-center gap-2">
-            <svg className="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
+            {isKawaii ? (
+              <span className="text-xl">⚡</span>
+            ) : (
+              <svg className="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            )}
             <h2 className="text-xl font-bold text-foreground">Work</h2>
           </div>
 
@@ -569,9 +592,13 @@ export default function Dashboard() {
               <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
                 <div className="mb-4 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <svg className="h-5 w-5 text-chart-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                    </svg>
+                    {isKawaii ? (
+                      <span className="text-xl">🚚</span>
+                    ) : (
+                      <svg className="h-5 w-5 text-chart-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                      </svg>
+                    )}
                     <h3 className="text-lg font-semibold text-foreground">
                       Convoys
                     </h3>
@@ -636,11 +663,15 @@ export default function Dashboard() {
             {/* Beads - In Progress */}
             <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
               <div className="mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <svg className="h-5 w-5 text-chart-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="3" strokeWidth={2} />
-                    <circle cx="12" cy="12" r="8" strokeWidth={2} strokeDasharray="4 2" />
-                  </svg>
+                <div className="flex items-center gap-3">
+                  {isKawaii ? (
+                    <span className="text-4xl">📿</span>
+                  ) : (
+                    <svg className="h-5 w-5 text-chart-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="3" strokeWidth={2} />
+                      <circle cx="12" cy="12" r="8" strokeWidth={2} strokeDasharray="4 2" />
+                    </svg>
+                  )}
                   <h3 className="text-lg font-semibold text-foreground">
                     Beads
                   </h3>
@@ -700,9 +731,13 @@ export default function Dashboard() {
               <div className="rounded-xl border border-border bg-card p-6 shadow-sm lg:col-span-2">
                 <div className="mb-4 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <svg className="h-5 w-5 text-chart-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
+                    {isKawaii ? (
+                      <span className="text-xl">👷</span>
+                    ) : (
+                      <svg className="h-5 w-5 text-chart-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                    )}
                     <h3 className="text-lg font-semibold text-foreground">
                       Crew
                     </h3>
@@ -825,9 +860,13 @@ export default function Dashboard() {
         {/* BOTTOM SECTION - Engine Health + Output */}
         <div>
           <div className="mb-4 flex items-center gap-2">
-            <svg className="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+            {isKawaii ? (
+              <span className="text-xl">🔧</span>
+            ) : (
+              <svg className="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            )}
             <h2 className="text-xl font-bold text-foreground">System Status</h2>
           </div>
 
@@ -837,15 +876,19 @@ export default function Dashboard() {
               <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
                 <div className="mb-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className={`flex h-10 w-10 items-center justify-center rounded-lg shadow-md ${systemHealthy ? 'bg-chart-2' : 'bg-destructive'}`}>
-                      <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        {systemHealthy ? (
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        ) : (
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        )}
-                      </svg>
-                    </div>
+                    {isKawaii ? (
+                      <span className="text-4xl">{systemHealthy ? '✅' : '⚠️'}</span>
+                    ) : (
+                      <div className={`flex h-10 w-10 items-center justify-center rounded-lg shadow-md ${systemHealthy ? 'bg-chart-2' : 'bg-destructive'}`}>
+                        <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          {systemHealthy ? (
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          ) : (
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                          )}
+                        </svg>
+                      </div>
+                    )}
                     <div>
                       <h3 className="text-lg font-bold text-foreground">
                         Engine {systemHealthy ? 'Running' : 'Issues'}
@@ -908,9 +951,13 @@ export default function Dashboard() {
               <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
                 <div className="mb-4 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <svg className="h-5 w-5 text-chart-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                    </svg>
+                    {isKawaii ? (
+                      <span className="text-xl">✨</span>
+                    ) : (
+                      <svg className="h-5 w-5 text-chart-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                      </svg>
+                    )}
                     <h3 className="text-lg font-semibold text-foreground">
                       Refinery Output
                     </h3>
@@ -981,7 +1028,7 @@ export default function Dashboard() {
 
             <div className="space-y-4">
               <div>
-                <label className="mb-1 block text-sm font-medium text-foreground">Subject</label>
+                <label className="mb-1 block text-sm font-medium text-foreground">Subject <span className="text-muted-foreground font-normal">(optional)</span></label>
                 <input
                   type="text"
                   value={mailSubject}
@@ -1012,7 +1059,7 @@ export default function Dashboard() {
                 </button>
                 <button
                   onClick={handleSendMail}
-                  disabled={isSendingMail || !mailSubject || !mailBody}
+                  disabled={isSendingMail || !mailBody}
                   className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                 >
                   {isSendingMail ? 'Sending...' : 'Send to Mayor'}

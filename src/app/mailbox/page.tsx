@@ -6,6 +6,7 @@ import { useCrewStatus } from '@/lib/use-crew';
 import { usePolecats, useRefineries, useWitnesses } from '@/lib/use-beads';
 import { useGtStatus } from '@/lib/use-gt-status';
 import { useFeature } from '@/lib/project-mode';
+import { useTheme } from '@/lib/theme-provider';
 import { NavBar } from '@/components/layout';
 import { cn, formatRelativeTime } from '@/lib/utils';
 import type { MailMessage, MailThread } from '@/types/mail';
@@ -425,7 +426,7 @@ function ComposeModal({ isOpen, onClose, replyTo, recipients, recipientsLoading,
               const stoppedRecipients = availableRecipients.filter((r) => r.status === 'stopped');
 
               return (
-                <div className="absolute z-50 mt-1 w-full max-h-60 overflow-auto rounded-md border border-border bg-popover shadow-lg">
+                <div className="select-dropdown absolute z-50 mt-1 w-full max-h-60 overflow-auto rounded-md border border-border bg-popover shadow-lg">
                   {availableRecipients.length === 0 ? (
                     <div className="px-3 py-2 text-sm text-muted-foreground">No recipients available</div>
                   ) : (
@@ -441,7 +442,7 @@ function ComposeModal({ isOpen, onClose, replyTo, recipients, recipientsLoading,
                               type="button"
                               onClick={() => { setTo(r.address); setIsDropdownOpen(false); }}
                               className={cn(
-                                'w-full px-3 py-2 text-sm text-left flex items-center gap-2 hover:bg-accent',
+                                'select-option w-full px-3 py-2 text-sm text-left flex items-center gap-2 hover:bg-accent',
                                 to === r.address && 'bg-primary/10'
                               )}
                             >
@@ -464,7 +465,7 @@ function ComposeModal({ isOpen, onClose, replyTo, recipients, recipientsLoading,
                               type="button"
                               onClick={() => { setTo(r.address); setIsDropdownOpen(false); }}
                               className={cn(
-                                'w-full px-3 py-2 text-sm text-left flex items-center gap-2 hover:bg-accent',
+                                'select-option w-full px-3 py-2 text-sm text-left flex items-center gap-2 hover:bg-accent',
                                 to === r.address && 'bg-primary/10'
                               )}
                             >
@@ -487,7 +488,7 @@ function ComposeModal({ isOpen, onClose, replyTo, recipients, recipientsLoading,
                               type="button"
                               onClick={() => { setTo(r.address); setIsDropdownOpen(false); }}
                               className={cn(
-                                'w-full px-3 py-2 text-sm text-left flex items-center gap-2 hover:bg-accent',
+                                'select-option w-full px-3 py-2 text-sm text-left flex items-center gap-2 hover:bg-accent',
                                 to === r.address && 'bg-primary/10'
                               )}
                             >
@@ -564,6 +565,8 @@ function ComposeModal({ isOpen, onClose, replyTo, recipients, recipientsLoading,
 }
 
 export default function MailboxPage() {
+  const { theme } = useTheme();
+  const isKawaii = theme === 'smorgasbord';
   const hasMailbox = useFeature('controlPlane');
   const {
     mailbox,
@@ -754,18 +757,22 @@ export default function MailboxPage() {
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-6 flex items-start justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">
-              Comms
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Conversations with Gas Town agents
-            </p>
+          <div className="flex items-center gap-3">
+            {isKawaii && <span className="text-4xl">📡</span>}
+            <div>
+              <h2 className="text-2xl font-bold text-foreground">
+                Comms
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Conversations with Gas Town agents
+              </p>
+            </div>
           </div>
 
           <div className="flex items-center gap-3">
             {mailbox.unreadCount > 0 && (
               <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary/10 text-primary border border-primary/30">
+                {isKawaii && <span className="mr-1">💌</span>}
                 {mailbox.unreadCount} unread
               </span>
             )}
@@ -773,9 +780,13 @@ export default function MailboxPage() {
               onClick={handleCompose}
               className="px-4 py-2 text-sm font-medium rounded-md bg-primary hover:bg-primary/90 text-primary-foreground transition-colors"
             >
-              <svg className="inline-block w-4 h-4 mr-2 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
+              {isKawaii ? (
+                <span className="mr-2">✉️</span>
+              ) : (
+                <svg className="inline-block w-4 h-4 mr-2 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+              )}
               Compose
             </button>
             <button
@@ -783,6 +794,7 @@ export default function MailboxPage() {
               disabled={isLoading}
               className="px-4 py-2 text-sm rounded-md bg-secondary hover:bg-accent text-secondary-foreground transition-colors disabled:opacity-50"
             >
+              {isKawaii && <span className={`mr-1 ${isLoading ? 'animate-spin inline-block' : ''}`}>🔄</span>}
               {isLoading ? 'Refreshing...' : 'Refresh'}
             </button>
           </div>
@@ -792,14 +804,18 @@ export default function MailboxPage() {
         <div className="mb-6">
           <div className="max-w-md">
             <div className="relative">
-              <svg
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
+              {isKawaii ? (
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-base">🔍</span>
+              ) : (
+                <svg
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              )}
               <input
                 type="text"
                 value={searchQuery}
@@ -850,6 +866,7 @@ export default function MailboxPage() {
 
         {!isLoading && !error && threads.length === 0 && (
           <div className="rounded-lg border border-border bg-card p-8 text-center shadow-sm">
+            {isKawaii && <div className="text-4xl mb-3">{searchQuery ? '🔍' : '📭'}</div>}
             <p className="text-muted-foreground">
               {searchQuery ? 'No messages match your search' : 'No conversations yet'}
             </p>

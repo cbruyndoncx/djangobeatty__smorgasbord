@@ -126,64 +126,563 @@
 
 /* =============================================================================
    SMORGASBORD THEME
-   Feral kawaii vibes - go wild here
+   Kawaii-inspired chunky, friendly design - ported from envs.now
    ============================================================================= */
 
+html.theme-smorgasbord,
 .theme-smorgasbord {
-  /* Colors - placeholder values, replace with your palette */
-  --radius: 1rem;
-  --background: oklch(0.97 0.02 320);      /* soft pink */
-  --foreground: oklch(0.25 0.1 280);       /* deep purple */
-  --card: oklch(0.99 0.015 340);           /* cream pink */
-  --card-foreground: oklch(0.25 0.1 280);
-  --popover: oklch(0.99 0.015 340);
-  --popover-foreground: oklch(0.25 0.1 280);
-  --primary: oklch(0.65 0.25 320);         /* hot pink */
-  --primary-foreground: oklch(0.98 0 0);
-  --secondary: oklch(0.85 0.15 180);       /* mint */
-  --secondary-foreground: oklch(0.25 0.1 180);
-  --muted: oklch(0.92 0.03 320);
-  --muted-foreground: oklch(0.5 0.1 280);
-  --accent: oklch(0.8 0.2 80);             /* golden yellow */
-  --accent-foreground: oklch(0.25 0.1 80);
-  --destructive: oklch(0.65 0.25 25);      /* coral red */
-  --border: oklch(0.85 0.1 320);
-  --input: oklch(0.9 0.05 320);
-  --ring: oklch(0.7 0.2 280);
+  /* ==================== KAWAII COLORS ==================== */
+  /* Primary - warm gold */
+  --color-primary: #FFB84D;
+  --color-primary-dark: #FFA726;
 
-  /* Chart colors - make them pop */
-  --chart-1: oklch(0.7 0.25 320);          /* pink */
-  --chart-2: oklch(0.7 0.2 180);           /* teal */
-  --chart-3: oklch(0.75 0.2 80);           /* yellow */
-  --chart-4: oklch(0.65 0.25 280);         /* purple */
-  --chart-5: oklch(0.7 0.2 140);           /* green */
+  /* Accent - vibrant orange */
+  --color-accent: #FF5722;
+  --color-accent-dark: #F44336;
+
+  /* Status colors */
+  --color-success: #4CAF50;
+  --color-success-light: #81C784;
+  --color-warning: #FFC107;
+  --color-error: #EF5350;
+  --color-info: #42A5F5;
+
+  /* Neutral colors with warmth */
+  --color-background: #FFFEF9;
+  --color-surface: #FFFFFF;
+  --color-surface-hover: #FFF9E6;
+  --color-border: #E8E3D5;
+  --color-text: #2D2A26;
+  --color-text-secondary: #6B6561;
+  --color-text-muted: #9B9691;
+
+  /* ==================== MAP TO TAILWIND VARS ==================== */
+  --radius: 1rem;
+  --background: #FFFEF9;
+  --foreground: #2D2A26;
+  --card: #FFFFFF;
+  --card-foreground: #2D2A26;
+  --popover: #FFFFFF;
+  --popover-foreground: #2D2A26;
+  --primary: #FFB84D;
+  --primary-foreground: #2D2A26;
+  --secondary: #FFF9E6;
+  --secondary-foreground: #2D2A26;
+  --muted: #F5F2ED;
+  --muted-foreground: #6B6561;
+  --accent: #FF5722;
+  --accent-foreground: #FFFFFF;
+  --destructive: #EF5350;
+  --border: #E8E3D5;
+  --input: #E8E3D5;
+  --ring: #FFB84D;
+
+  /* Chart colors */
+  --chart-1: #FFB84D;
+  --chart-2: #4CAF50;
+  --chart-3: #FF5722;
+  --chart-4: #42A5F5;
+  --chart-5: #EF5350;
 
   /* Sidebar */
-  --sidebar: oklch(0.95 0.03 320);
-  --sidebar-foreground: oklch(0.25 0.1 280);
-  --sidebar-primary: oklch(0.65 0.25 320);
-  --sidebar-primary-foreground: oklch(0.98 0 0);
-  --sidebar-accent: oklch(0.9 0.1 180);
-  --sidebar-accent-foreground: oklch(0.25 0.1 180);
-  --sidebar-border: oklch(0.85 0.1 320);
-  --sidebar-ring: oklch(0.7 0.2 280);
+  --sidebar: #FFFEF9;
+  --sidebar-foreground: #2D2A26;
+  --sidebar-primary: #FFB84D;
+  --sidebar-primary-foreground: #2D2A26;
+  --sidebar-accent: #FFF9E6;
+  --sidebar-accent-foreground: #2D2A26;
+  --sidebar-border: #E8E3D5;
+  --sidebar-ring: #FFB84D;
+
+  /* ==================== KAWAII STYLING ==================== */
+  /* Border radius - Everything is rounded */
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-full: 9999px;
+
+  /* Borders - Thick and bold */
+  --border-width: 4px;
+  --border-width-thick: 6px;
+
+  /* Shadows - Playful depth */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.16);
+  --shadow-chunky: 6px 6px 0px rgba(0, 0, 0, 0.1);
+
+  /* Typography - use Next.js font variables directly in rules below */
+
+  /* Animations */
+  --transition-fast: 150ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  --transition-base: 250ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  --transition-slow: 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* Smorgasbord extras - decorations, animations, etc. */
-.theme-smorgasbord {
-  /* Example: Add subtle pattern to body background */
-  /* background-image: url('/patterns/dots.svg'); */
-
-  /* Example: Chonkier shadows */
-  /* --shadow-sm: 0 2px 8px oklch(0.7 0.15 320 / 20%); */
+/* ==================== BODY STYLING ==================== */
+.theme-smorgasbord body {
+  background-color: var(--color-background);
+  color: var(--color-text);
+  font-family: var(--font-mplus-rounded), 'M PLUS Rounded 1c', system-ui, sans-serif;
 }
 
-/* Example: Add decorations to cards in smorgasbord theme */
-/*
+/* ==================== TYPOGRAPHY ==================== */
+.theme-smorgasbord h1,
+.theme-smorgasbord h2,
+.theme-smorgasbord h3 {
+  font-family: var(--font-cherry-bomb), 'Cherry Bomb One', cursive;
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  background: linear-gradient(135deg, #FFA726 0%, #FFB84D 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.theme-smorgasbord h1 {
+  font-size: 3.5rem;
+}
+
+.theme-smorgasbord h2 {
+  font-size: 2.625rem;
+}
+
+.theme-smorgasbord h3 {
+  font-size: 2rem;
+}
+
+/* Emoji spans inside headings should show their natural colors, not gradient */
+html.theme-smorgasbord h1 > span,
+html.theme-smorgasbord h2 > span,
+.theme-smorgasbord h1 > span,
+.theme-smorgasbord h2 > span {
+  -webkit-text-fill-color: initial !important;
+  background: none !important;
+  -webkit-background-clip: initial !important;
+  background-clip: initial !important;
+}
+
+/* Nav/header h1 - wordmark keeps Cherry Bomb but darker than page headings */
+html.theme-smorgasbord header h1,
+.theme-smorgasbord header h1 {
+  -webkit-text-fill-color: #2D2A26 !important;
+  -webkit-background-clip: initial !important;
+  background-clip: initial !important;
+  background: none !important;
+  font-size: 1.75rem;
+  color: #2D2A26 !important;
+}
+
+html.theme-smorgasbord header h1 span,
+.theme-smorgasbord header h1 span {
+  -webkit-text-fill-color: #FF5722 !important;
+  color: #FF5722 !important;
+}
+
+/* Smaller headings use body font */
+.theme-smorgasbord h4,
+.theme-smorgasbord h5,
+.theme-smorgasbord h6 {
+  font-family: var(--font-mplus-rounded), 'M PLUS Rounded 1c', system-ui, sans-serif;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--color-text);
+}
+
+/* Big stat numbers in Cherry Bomb - keeps original colors, just bigger font */
+html.theme-smorgasbord .kawaii-stat,
+.theme-smorgasbord .kawaii-stat {
+  font-family: var(--font-cherry-bomb), 'Cherry Bomb One', cursive !important;
+  font-weight: 400 !important;
+  font-size: 2.75rem !important;
+  line-height: 1 !important;
+  -webkit-text-fill-color: currentColor !important;
+  background: none !important;
+  -webkit-background-clip: initial !important;
+  background-clip: initial !important;
+}
+
+/* ==================== CHUNKY CARDS ==================== */
 .theme-smorgasbord .card {
-  background-image: url('/illustrations/corner-creature.svg');
-  background-position: bottom right;
-  background-repeat: no-repeat;
-  background-size: 48px;
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-chunky);
+  transition: all var(--transition-base);
 }
-*/
+
+.theme-smorgasbord .card:hover {
+  transform: translateY(-4px);
+  box-shadow: 8px 8px 0px rgba(0, 0, 0, 0.12);
+  border-color: var(--color-primary) !important;
+}
+
+/* ==================== CHUNKY BUTTONS ==================== */
+.theme-smorgasbord button {
+  font-family: var(--font-mplus-rounded), 'M PLUS Rounded 1c', system-ui, sans-serif;
+  font-weight: 700;
+  border-radius: var(--radius-lg) !important;
+  border-width: var(--border-width) !important;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-chunky);
+}
+
+.theme-smorgasbord button:hover {
+  transform: translateY(-2px);
+  box-shadow: 8px 8px 0px rgba(0, 0, 0, 0.12);
+}
+
+.theme-smorgasbord button:active {
+  transform: translateY(2px);
+  box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.08);
+}
+
+/* Card-like containers with embedded buttons should not have chunky button styling */
+/* This prevents double outlines on message cards, crew panels, etc. */
+.theme-smorgasbord .rounded-lg.border > button,
+.theme-smorgasbord .rounded-xl.border > button {
+  border-width: 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.theme-smorgasbord .rounded-lg.border > button:hover,
+.theme-smorgasbord .rounded-xl.border > button:hover,
+.theme-smorgasbord .rounded-lg.border > button:active,
+.theme-smorgasbord .rounded-xl.border > button:active {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Primary buttons get gold gradient */
+.theme-smorgasbord button[data-variant="default"],
+.theme-smorgasbord .bg-primary {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%) !important;
+  border-color: var(--color-primary-dark) !important;
+}
+
+/* ==================== CHUNKY INPUTS ==================== */
+.theme-smorgasbord input,
+.theme-smorgasbord textarea,
+.theme-smorgasbord select {
+  font-family: var(--font-mplus-rounded), 'M PLUS Rounded 1c', system-ui, sans-serif;
+  border: var(--border-width) solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  transition: all var(--transition-base);
+  background: var(--color-surface);
+}
+
+.theme-smorgasbord input:focus,
+.theme-smorgasbord textarea:focus,
+.theme-smorgasbord select:focus {
+  outline: none;
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 4px rgba(255, 184, 77, 0.2);
+}
+
+/* ==================== CHUNKY BADGES ==================== */
+.theme-smorgasbord [class*="badge"],
+.theme-smorgasbord [class*="Badge"] {
+  font-family: var(--font-mplus-rounded), 'M PLUS Rounded 1c', system-ui, sans-serif;
+  font-weight: 700;
+  border: 3px solid;
+  border-radius: var(--radius-full) !important;
+}
+
+/* ==================== NAVBAR ==================== */
+.theme-smorgasbord nav {
+  border-bottom: var(--border-width) solid var(--color-border) !important;
+}
+
+/* ==================== LOADING ANIMATION ==================== */
+@keyframes spin-bounce {
+  0% { transform: rotate(0deg) scale(1); }
+  25% { transform: rotate(90deg) scale(1.1); }
+  50% { transform: rotate(180deg) scale(1); }
+  75% { transform: rotate(270deg) scale(1.1); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+.theme-smorgasbord .animate-spin {
+  animation: spin-bounce 2s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+}
+
+/* ==================== SELECT DROPDOWNS ==================== */
+.theme-smorgasbord [data-radix-popper-content-wrapper] > div {
+  border: var(--border-width) solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-md);
+}
+
+/* Custom Select component dropdown styling */
+html.theme-smorgasbord .select-dropdown,
+.theme-smorgasbord .select-dropdown {
+  min-width: 180px !important;
+  padding: 10px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+}
+
+/* Lozenge/pill style options in dropdown */
+html.theme-smorgasbord .select-option,
+.theme-smorgasbord .select-option {
+  border-radius: 9999px !important;
+  padding: 10px 18px 10px 36px !important;
+  margin: 0 !important;
+}
+
+/* ==================== STATUS BADGES ==================== */
+.theme-smorgasbord .badge-success {
+  background: #81C784;
+  color: white;
+  border-color: #4CAF50;
+}
+
+.theme-smorgasbord .badge-warning {
+  background: #FFC107;
+  color: #2D2A26;
+  border-color: #FF9800;
+}
+
+.theme-smorgasbord .badge-error {
+  background: #EF5350;
+  color: white;
+  border-color: #D32F2F;
+}
+
+.theme-smorgasbord .badge-info {
+  background: #42A5F5;
+  color: white;
+  border-color: #1976D2;
+}
+
+/* ==================== TERMINAL DISPLAY ==================== */
+.theme-smorgasbord .terminal-kawaii,
+.theme-smorgasbord pre,
+.theme-smorgasbord code {
+  font-family: var(--font-geist-mono), 'Courier New', monospace;
+  font-size: 16px;
+  line-height: 1.6;
+  background: #1a1a1a;
+  color: #00ff00;
+  border: var(--border-width) solid #333 !important;
+  border-radius: var(--radius-md) !important;
+  padding: var(--space-md, 16px);
+  box-shadow: var(--shadow-md);
+}
+
+.theme-smorgasbord code {
+  padding: 2px 6px;
+  border-radius: 6px !important;
+  border: 2px solid var(--color-border) !important;
+  background: #f5f5f5;
+  color: var(--color-accent);
+}
+
+/* ==================== SPACING UTILITIES ==================== */
+.theme-smorgasbord {
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+}
+
+/* ==================== TABLES ==================== */
+.theme-smorgasbord table {
+  border: var(--border-width) solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  overflow: hidden;
+}
+
+.theme-smorgasbord th,
+.theme-smorgasbord td {
+  border: 2px solid var(--color-border) !important;
+  padding: var(--space-sm, 12px);
+}
+
+.theme-smorgasbord th {
+  background: var(--color-surface-hover);
+  font-family: var(--font-mplus-rounded), 'M PLUS Rounded 1c', system-ui, sans-serif;
+  font-weight: 700;
+}
+
+/* ==================== SCROLLBAR STYLING ==================== */
+.theme-smorgasbord ::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+.theme-smorgasbord ::-webkit-scrollbar-track {
+  background: var(--color-surface-hover);
+  border-radius: var(--radius-full);
+}
+
+.theme-smorgasbord ::-webkit-scrollbar-thumb {
+  background: var(--color-primary);
+  border-radius: var(--radius-full);
+  border: 2px solid var(--color-surface-hover);
+}
+
+.theme-smorgasbord ::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary-dark);
+}
+
+/* ==================== CONVOY STATUS SECTION HEADERS ==================== */
+/* Make the collapsible section headers into cute inline badges instead of full-width boxes */
+/* Targets: .mb-6 > button.flex.w-full (CollapsibleSection in convoy-list.tsx) */
+html.theme-smorgasbord .mb-6 > button.flex.w-full,
+.theme-smorgasbord .mb-6 > button.flex.w-full {
+  width: auto !important;
+  display: inline-flex !important;
+  padding: 6px 16px !important;
+  background: var(--color-surface) !important;
+  border: 3px solid var(--color-border) !important;
+  border-radius: 9999px !important;
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.08) !important;
+  margin-bottom: 12px !important;
+}
+
+html.theme-smorgasbord .mb-6 > button.flex.w-full:hover,
+.theme-smorgasbord .mb-6 > button.flex.w-full:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.1) !important;
+  border-color: var(--color-primary) !important;
+}
+
+/* Fix the h3 inside these buttons - no gradient, just colored text */
+html.theme-smorgasbord .mb-6 > button.flex.w-full h3,
+.theme-smorgasbord .mb-6 > button.flex.w-full h3 {
+  background: none !important;
+  -webkit-background-clip: initial !important;
+  -webkit-text-fill-color: currentColor !important;
+  background-clip: initial !important;
+  font-family: var(--font-mplus-rounded), 'M PLUS Rounded 1c', system-ui, sans-serif !important;
+  font-size: 0.75rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.1em !important;
+}
+
+/* Active status - green badge */
+html.theme-smorgasbord .mb-6 > button.flex.w-full h3.text-foreground,
+.theme-smorgasbord .mb-6 > button.flex.w-full h3.text-foreground {
+  color: #4CAF50 !important;
+}
+
+/* Stalled status - amber badge */
+html.theme-smorgasbord .mb-6 > button.flex.w-full h3.text-amber-400,
+.theme-smorgasbord .mb-6 > button.flex.w-full h3.text-amber-400 {
+  color: #FF9800 !important;
+}
+
+/* Completed status - purple badge */
+html.theme-smorgasbord .mb-6 > button.flex.w-full h3.text-muted-foreground,
+.theme-smorgasbord .mb-6 > button.flex.w-full h3.text-muted-foreground {
+  color: #9C27B0 !important;
+}
+
+/* ==================== CONVOY CARDS ==================== */
+/* Convoy card titles should use body font, not Cherry Bomb */
+/* High specificity to override the general h3 rule */
+html.theme-smorgasbord div.border-l-4 h3.text-base,
+html.theme-smorgasbord div.border-l-4 h3.font-semibold,
+html.theme-smorgasbord .rounded-md.border-l-4 h3,
+.theme-smorgasbord div.border-l-4 h3.text-base,
+.theme-smorgasbord div.border-l-4 h3.font-semibold,
+.theme-smorgasbord .rounded-md.border-l-4 h3 {
+  font-family: var(--font-mplus-rounded), 'M PLUS Rounded 1c', system-ui, sans-serif !important;
+  background: none !important;
+  -webkit-background-clip: initial !important;
+  -webkit-text-fill-color: #2D2A26 !important;
+  background-clip: initial !important;
+  font-weight: 700 !important;
+  font-size: 1rem !important;
+  color: #2D2A26 !important;
+}
+
+/* Status section headers in convoy detail breakdown */
+html.theme-smorgasbord .border-l-4 .text-xs.font-semibold,
+.theme-smorgasbord .border-l-4 .text-xs.font-semibold {
+  font-family: var(--font-mplus-rounded), 'M PLUS Rounded 1c', system-ui, sans-serif !important;
+  font-weight: 700 !important;
+}
+
+/* ==================== MODALS ==================== */
+/* Modal content should use body font, not Cherry Bomb */
+html.theme-smorgasbord .fixed.inset-0 h2,
+html.theme-smorgasbord .fixed.inset-0 h3,
+.theme-smorgasbord .fixed.inset-0 h2,
+.theme-smorgasbord .fixed.inset-0 h3 {
+  font-family: var(--font-mplus-rounded), 'M PLUS Rounded 1c', system-ui, sans-serif !important;
+  background: none !important;
+  -webkit-background-clip: initial !important;
+  -webkit-text-fill-color: currentColor !important;
+  background-clip: initial !important;
+  font-weight: 700 !important;
+}
+
+/* ==================== KANBAN COLUMN HEADERS ==================== */
+/* Kanban column headers should use body font, not Cherry Bomb */
+html.theme-smorgasbord h3.uppercase.tracking-wide,
+.theme-smorgasbord h3.uppercase.tracking-wide {
+  font-family: var(--font-mplus-rounded), 'M PLUS Rounded 1c', system-ui, sans-serif !important;
+  background: none !important;
+  -webkit-background-clip: initial !important;
+  -webkit-text-fill-color: currentColor !important;
+  background-clip: initial !important;
+  font-weight: 700 !important;
+  font-size: 0.75rem !important;
+}
+
+/* CardTitle elements (h3) with flex layout should use body font, not Cherry Bomb gradient */
+html.theme-smorgasbord h3.flex,
+.theme-smorgasbord h3.flex {
+  font-family: var(--font-mplus-rounded), 'M PLUS Rounded 1c', system-ui, sans-serif !important;
+  background: none !important;
+  -webkit-background-clip: initial !important;
+  -webkit-text-fill-color: currentColor !important;
+  background-clip: initial !important;
+}
+
+/* ==================== TERMINAL SCREEN DISPLAYS ==================== */
+/* Styled terminal output panels in Engine Room page */
+html.theme-smorgasbord .terminal-screen,
+.theme-smorgasbord .terminal-screen {
+  position: relative !important;
+  font-family: var(--font-geist-mono), 'Fira Code', 'Consolas', 'Courier New', monospace !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+  background: linear-gradient(135deg, #1a1a2e 0%, #0f0f23 100%) !important;
+  color: #00ff88 !important;
+  border: 3px solid #333366 !important;
+  border-radius: 12px !important;
+  padding: 16px !important;
+  box-shadow:
+    inset 0 0 30px rgba(0, 255, 136, 0.05),
+    0 4px 0 rgba(0, 0, 0, 0.2) !important;
+  text-shadow: 0 0 5px rgba(0, 255, 136, 0.3) !important;
+  overflow-x: auto !important;
+}
+
+/* CRT-style scan lines effect */
+html.theme-smorgasbord .terminal-screen::before,
+.theme-smorgasbord .terminal-screen::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.1) 2px,
+    rgba(0, 0, 0, 0.1) 4px
+  );
+  pointer-events: none;
+  border-radius: 12px;
+}

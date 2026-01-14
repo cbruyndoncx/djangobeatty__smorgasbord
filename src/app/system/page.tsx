@@ -5,11 +5,16 @@ import { useWitnesses, useRefineries } from '@/lib/use-beads';
 import { useGtStatus } from '@/lib/use-gt-status';
 import { NavBar } from '@/components/layout';
 import { PromptModal, ConfirmModal } from '@/components/settings';
+import { useTheme } from '@/lib/theme-provider';
+import { cn } from '@/lib/utils';
 
 // Stable options object for manual-only refresh (defined outside component to avoid re-creation)
 const MANUAL_REFRESH_OPTIONS = { pollingInterval: 0 } as const;
 
 export default function SystemPage() {
+  const { theme } = useTheme();
+  const isKawaii = theme === 'smorgasbord';
+
   // Disable auto-refresh on Engine Room - all refreshes are manual only
   const { witnesses, isLoading: witnessesLoading, refresh: refreshWitnesses } = useWitnesses(MANUAL_REFRESH_OPTIONS);
   const { refineries, isLoading: refineriesLoading, refresh: refreshRefineries } = useRefineries(MANUAL_REFRESH_OPTIONS);
@@ -429,7 +434,10 @@ export default function SystemPage() {
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-foreground">Engine Room</h1>
+          <div className="flex items-center gap-3">
+            {isKawaii && <span className="text-4xl">🔧</span>}
+            <h1 className="text-3xl font-bold text-foreground">Engine Room</h1>
+          </div>
           <button
             onClick={() => {
               refresh();
@@ -439,9 +447,13 @@ export default function SystemPage() {
             disabled={isLoading}
             className="flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm font-medium text-foreground hover:bg-muted disabled:opacity-50"
           >
-            <svg className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
+            {isKawaii ? (
+              <span className={`text-xl ${isLoading ? 'animate-spin inline-block' : ''}`}>🔄</span>
+            ) : (
+              <svg className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            )}
             Refresh
           </button>
         </div>
@@ -457,27 +469,27 @@ export default function SystemPage() {
         <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
           <div className="rounded-lg border border-border bg-card p-4">
             <div className="text-xs font-medium text-muted-foreground mb-1">Mayor Unread</div>
-            <div className={`text-2xl font-bold ${mayorMail > 0 ? 'text-purple-600 dark:text-purple-400' : 'text-muted-foreground'}`}>{mayorMail}</div>
+            <div className={cn("text-2xl font-bold", mayorMail > 0 ? 'text-purple-600 dark:text-purple-400' : 'text-muted-foreground', isKawaii && "kawaii-stat")}>{mayorMail}</div>
           </div>
           <div className="rounded-lg border border-border bg-card p-4">
             <div className="text-xs font-medium text-muted-foreground mb-1">Deacon Unread</div>
-            <div className={`text-2xl font-bold ${deaconMail > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}`}>{deaconMail}</div>
+            <div className={cn("text-2xl font-bold", deaconMail > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground', isKawaii && "kawaii-stat")}>{deaconMail}</div>
           </div>
           <div className="rounded-lg border border-border bg-card p-4">
             <div className="text-xs font-medium text-muted-foreground mb-1">Witnesses Unread</div>
-            <div className={`text-2xl font-bold ${witnessesMail > 0 ? 'text-blue-600 dark:text-blue-400' : 'text-muted-foreground'}`}>{witnessesMail}</div>
+            <div className={cn("text-2xl font-bold", witnessesMail > 0 ? 'text-blue-600 dark:text-blue-400' : 'text-muted-foreground', isKawaii && "kawaii-stat")}>{witnessesMail}</div>
           </div>
           <div className="rounded-lg border border-border bg-card p-4">
             <div className="text-xs font-medium text-muted-foreground mb-1">Refineries Unread</div>
-            <div className={`text-2xl font-bold ${refineriesMail > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'}`}>{refineriesMail}</div>
+            <div className={cn("text-2xl font-bold", refineriesMail > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground', isKawaii && "kawaii-stat")}>{refineriesMail}</div>
           </div>
           <div className="rounded-lg border border-border bg-card p-4">
             <div className="text-xs font-medium text-muted-foreground mb-1">Active Witnesses</div>
-            <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{activeWitnesses}</div>
+            <div className={cn("text-2xl font-bold text-emerald-600 dark:text-emerald-400", isKawaii && "kawaii-stat")}>{activeWitnesses}</div>
           </div>
           <div className="rounded-lg border border-border bg-card p-4">
             <div className="text-xs font-medium text-muted-foreground mb-1">Refineries</div>
-            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{refineries.length}</div>
+            <div className={cn("text-2xl font-bold text-blue-600 dark:text-blue-400", isKawaii && "kawaii-stat")}>{refineries.length}</div>
           </div>
         </div>
 
@@ -495,7 +507,10 @@ export default function SystemPage() {
           <div className="space-y-6">
             {/* Mayor Section */}
             <div>
-              <h2 className="mb-4 text-xl font-semibold text-foreground">Mayor</h2>
+              <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold text-foreground">
+                {isKawaii && <span className="text-2xl">🎩</span>}
+                Mayor
+              </h2>
               <div className="rounded-lg border border-border bg-card p-6">
                 <div className="mb-4">
                   <div className="text-xs text-muted-foreground mb-3">
@@ -545,7 +560,10 @@ export default function SystemPage() {
 
             {/* Deacon Section */}
             <div>
-              <h2 className="mb-4 text-xl font-semibold text-foreground">Deacon</h2>
+              <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold text-foreground">
+                {isKawaii && <span className="text-2xl">⛪</span>}
+                Deacon
+              </h2>
               <div className="rounded-lg border border-border bg-card p-6">
                 <div className="mb-4">
                   <div className="text-xs text-muted-foreground mb-3">
@@ -646,7 +664,10 @@ export default function SystemPage() {
 
             {/* Witnesses Section */}
             <div>
-              <h2 className="mb-4 text-xl font-semibold text-foreground">Witnesses ({witnesses.length})</h2>
+              <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold text-foreground">
+                {isKawaii && <span className="text-2xl">👁️</span>}
+                Witnesses ({witnesses.length})
+              </h2>
               <div className="mb-3 text-xs text-muted-foreground">
                 Patrol agents that oversee Polecats and the Refinery, monitoring progress
               </div>
@@ -751,7 +772,10 @@ export default function SystemPage() {
 
             {/* Refineries Section */}
             <div>
-              <h2 className="mb-4 text-xl font-semibold text-foreground">Refineries ({refineries.length})</h2>
+              <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold text-foreground">
+                {isKawaii && <span className="text-2xl">🏭</span>}
+                Refineries ({refineries.length})
+              </h2>
               <div className="mb-3 text-xs text-muted-foreground">
                 Manages the Merge Queue for a Rig, intelligently merging changes
               </div>
@@ -888,14 +912,17 @@ export default function SystemPage() {
 
             {/* Dogs Section */}
             <div>
-              <h2 className="mb-4 text-xl font-semibold text-foreground">Dogs</h2>
+              <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold text-foreground">
+                {isKawaii && <span className="text-2xl">🐕</span>}
+                Dogs
+              </h2>
               <div className="rounded-lg border border-border bg-card p-6">
                 <div className="mb-4">
                   <div className="text-xs text-muted-foreground mb-3">
                     The Deacon's crew of maintenance agents handling background tasks
                   </div>
                   <div className="text-sm font-medium text-foreground mb-2">Status Output:</div>
-                  <pre className="rounded bg-muted p-3 text-xs text-foreground overflow-x-auto">{dogsOutput}</pre>
+                  <pre className={`rounded bg-muted p-3 text-xs text-foreground overflow-x-auto ${isKawaii ? 'terminal-screen' : ''}`}>{dogsOutput}</pre>
                 </div>
 
                 {/* Dogs Controls */}
@@ -979,14 +1006,17 @@ export default function SystemPage() {
 
             {/* Boot Section */}
             <div>
-              <h2 className="mb-4 text-xl font-semibold text-foreground">Boot</h2>
+              <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold text-foreground">
+                {isKawaii && <span className="text-2xl">👢</span>}
+                Boot
+              </h2>
               <div className="rounded-lg border border-border bg-card p-6">
                 <div className="mb-4">
                   <div className="text-xs text-muted-foreground mb-3">
                     Special Dog that checks Deacon functionality every 5 minutes
                   </div>
                   <div className="text-sm font-medium text-foreground mb-2">Status Output:</div>
-                  <pre className="rounded bg-muted p-3 text-xs text-foreground overflow-x-auto">{bootOutput}</pre>
+                  <pre className={`rounded bg-muted p-3 text-xs text-foreground overflow-x-auto ${isKawaii ? 'terminal-screen' : ''}`}>{bootOutput}</pre>
                 </div>
 
                 {/* Boot Controls */}
@@ -1026,14 +1056,17 @@ export default function SystemPage() {
 
             {/* Doctor Section */}
             <div>
-              <h2 className="mb-4 text-xl font-semibold text-foreground">Doctor</h2>
+              <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold text-foreground">
+                {isKawaii && <span className="text-2xl">🩺</span>}
+                Doctor
+              </h2>
               <div className="rounded-lg border border-border bg-card p-6">
                 <div className="mb-4">
                   <div className="text-xs text-muted-foreground mb-3">
                     Diagnostic tool that runs health checks on the workspace and can automatically fix common issues
                   </div>
                   <div className="text-sm font-medium text-foreground mb-2">Diagnostic Output:</div>
-                  <pre className="rounded bg-muted p-3 text-xs text-foreground overflow-x-auto">{doctorOutput}</pre>
+                  <pre className={`rounded bg-muted p-3 text-xs text-foreground overflow-x-auto ${isKawaii ? 'terminal-screen' : ''}`}>{doctorOutput}</pre>
                 </div>
 
                 {/* Doctor Controls */}

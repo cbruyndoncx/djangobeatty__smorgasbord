@@ -2,6 +2,7 @@
 
 import { cn } from '@/lib/utils';
 import { formatRelativeTime } from '@/lib/utils';
+import { useTheme } from '@/lib/theme-provider';
 import type { Issue, Priority } from '@/types/beads';
 
 interface IssueCardProps {
@@ -49,6 +50,15 @@ const issueTypeIcons: Record<string, string> = {
   agent: '◉',
 };
 
+// Kawaii icons for smorgasbord theme
+const kawaiiIssueTypeIcons: Record<string, string> = {
+  task: '💎',
+  feature: '✨',
+  bug: '🐛',
+  molecule: '🧬',
+  agent: '🤖',
+};
+
 export function IssueCard({
   issue,
   onClick,
@@ -57,8 +67,11 @@ export function IssueCard({
   isDragging,
   isHighlighted,
 }: IssueCardProps) {
+  const { theme } = useTheme();
+  const isKawaii = theme === 'smorgasbord';
   const priority = priorityConfig[issue.priority];
-  const typeIcon = issueTypeIcons[issue.issue_type] || '◇';
+  const icons = isKawaii ? kawaiiIssueTypeIcons : issueTypeIcons;
+  const typeIcon = icons[issue.issue_type] || (isKawaii ? '💎' : '◇');
 
   const extractRig = (assignee?: string): string | null => {
     if (!assignee) return null;
@@ -133,7 +146,7 @@ export function IssueCard({
 
       {issue.dependencies && issue.dependencies.length > 0 && (
         <div className="mt-2 flex items-center gap-1 text-[10px] text-zinc-400 dark:text-zinc-500">
-          <span>⛓</span>
+          <span>{isKawaii ? '🔗' : '⛓'}</span>
           <span>{issue.dependencies.length} dep{issue.dependencies.length > 1 ? 's' : ''}</span>
         </div>
       )}
