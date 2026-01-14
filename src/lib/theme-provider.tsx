@@ -42,13 +42,16 @@ export function ThemeProvider({ children, defaultTheme = 'smorgasbord' }: ThemeP
       if (stored && (stored === 'hangover' || stored === 'smorgasbord')) {
         setThemeState(stored);
         applyTheme(stored);
+      } else {
+        // No stored value - apply the default theme
+        applyTheme(defaultTheme);
       }
     } catch (err) {
       console.error('Failed to load theme from localStorage:', err);
     } finally {
       setIsLoading(false);
     }
-  }, [applyTheme]);
+  }, [applyTheme, defaultTheme]);
 
   // Set theme and persist to localStorage
   const setTheme = useCallback((newTheme: VisualTheme) => {
