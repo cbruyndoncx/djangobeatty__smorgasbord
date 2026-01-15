@@ -15,6 +15,8 @@ export async function POST(
 ) {
   try {
     const { name: crewName } = await params;
+    const body = await request.json().catch(() => ({}));
+    const { rig } = body;
 
     if (!crewName) {
       return NextResponse.json(
@@ -23,19 +25,27 @@ export async function POST(
       );
     }
 
-    // Sanitize input to prevent command injection
-    const sanitizedName = crewName.replace(/[^a-zA-Z0-9_-]/g, '');
-
-    if (sanitizedName !== crewName) {
+    if (!rig) {
       return NextResponse.json(
-        { error: 'Invalid crew member name' },
+        { error: 'Rig is required' },
+        { status: 400 }
+      );
+    }
+
+    // Sanitize inputs to prevent command injection
+    const sanitizedName = crewName.replace(/[^a-zA-Z0-9_-]/g, '');
+    const sanitizedRig = rig.replace(/[^a-zA-Z0-9_-]/g, '');
+
+    if (sanitizedName !== crewName || sanitizedRig !== rig) {
+      return NextResponse.json(
+        { error: 'Invalid crew member name or rig' },
         { status: 400 }
       );
     }
 
     try {
       const { stdout, stderr } = await execGt(
-        `gt crew stop ${sanitizedName}`,
+        `gt crew stop ${sanitizedName} --rig ${sanitizedRig}`,
         {
           timeout: 15000,
           cwd: process.env.GT_BASE_PATH || process.cwd(),
