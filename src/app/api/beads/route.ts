@@ -96,24 +96,9 @@ async function fetchConvoys(cachedConvoys?: Convoy[]): Promise<Convoy[]> {
 
     // Fetch full details for each convoy in parallel
     const convoyDetailsPromises = limitedConvoys.map(async (c: any) => {
-      // If convoy is closed, mark as completed immediately without fetching details
-      // This prevents flickering when detail fetches timeout
-      if (c.status === 'closed') {
-        return {
-          id: c.id,
-          title: c.title,
-          issues: [],
-          status: 'completed' as const,
-          progress: { completed: 0, total: 0 },
-          created_at: c.created_at,
-          updated_at: c.updated_at || c.created_at,
-        };
-      }
-
-      // For open convoys, fetch details to determine if active or stalled
       try {
         const { stdout: detailStdout } = await execGt(`gt convoy status ${c.id} --json`, {
-          timeout: 3000, // Reduced from 10s
+          timeout: 8000,
           cwd: process.env.GT_BASE_PATH || process.cwd(),
         });
 
@@ -122,9 +107,11 @@ async function fetchConvoys(cachedConvoys?: Convoy[]): Promise<Convoy[]> {
         // Map tracked issues to issue IDs
         const issueIds = details.tracked?.map((t: any) => t.id) || [];
 
-        // Determine status for open convoys
+        // Determine convoy status
         let status: Convoy['status'] = 'active';
-        if (details.total === 0 || !details.tracked || details.tracked.length === 0) {
+        if (details.status === 'closed' || c.status === 'closed') {
+          status = 'completed';
+        } else if (details.total === 0 || !details.tracked || details.tracked.length === 0) {
           // Empty convoy or no tracked issues = stalled
           status = 'stalled';
         }
