@@ -330,7 +330,7 @@ function ThreadDetail({ thread, onClose, onReply, searchQuery = '' }: ThreadDeta
                     <HighlightWithRefs text={msg.body} />
                   </p>
                 ) : (
-                  <div className="text-sm text-foreground prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-headings:my-2 prose-headings:!font-[system-ui] prose-ul:my-1 prose-ol:my-1 prose-li:my-0 prose-pre:my-2 prose-code:text-xs [&_h1]:!font-[system-ui] [&_h2]:!font-[system-ui] [&_h3]:!font-[system-ui] [&_h4]:!font-[system-ui]">
+                  <div className="text-sm text-foreground chat-markdown">
                     <ReactMarkdown>{msg.body}</ReactMarkdown>
                   </div>
                 )
