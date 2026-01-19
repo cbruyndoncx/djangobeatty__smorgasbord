@@ -54,6 +54,16 @@ export default function Dashboard() {
   const [replyText, setReplyText] = useState('');
   const [sendingReply, setSendingReply] = useState(false);
 
+  // Agent activity state
+  const [agentActivities, setAgentActivities] = useState<Array<{
+    session: string;
+    name: string;
+    role: string;
+    activity: string;
+    duration?: string;
+    tool?: string;
+  }>>([]);
+
   // Fetch crew details for branch info
   useEffect(() => {
     const fetchCrewDetails = async () => {
@@ -91,6 +101,25 @@ export default function Dashboard() {
     fetchInbox();
     // Re-fetch every 10 seconds
     const interval = setInterval(fetchInbox, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Fetch agent activities
+  useEffect(() => {
+    const fetchActivities = async () => {
+      try {
+        const response = await fetch('/api/agents/activity');
+        if (response.ok) {
+          const data = await response.json();
+          setAgentActivities(data.activities || []);
+        }
+      } catch (error) {
+        console.error('Error fetching agent activities:', error);
+      }
+    };
+    fetchActivities();
+    // Re-fetch every 5 seconds for real-time updates
+    const interval = setInterval(fetchActivities, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -856,6 +885,54 @@ export default function Dashboard() {
             </FeatureGate>
           </div>
         </div>
+
+        {/* AGENT ACTIVITY SECTION */}
+        {agentActivities.length > 0 && (
+          <div className="mb-8">
+            <div className="mb-4 flex items-center gap-2">
+              {isKawaii ? (
+                <span className="text-xl">🎬</span>
+              ) : (
+                <svg className="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              )}
+              <h2 className="text-xl font-bold text-foreground">Agent Activity</h2>
+              <span className="rounded-full bg-chart-2/20 px-2 py-0.5 text-xs font-semibold text-chart-2">
+                {agentActivities.length} active
+              </span>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {agentActivities.map((agent) => (
+                <div
+                  key={agent.session}
+                  className="rounded-lg border border-border bg-card p-4 shadow-sm"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className={`h-2.5 w-2.5 rounded-full ${
+                      agent.activity === 'Idle' ? 'bg-muted-foreground' :
+                      agent.tool ? 'bg-chart-1' : 'bg-chart-2 animate-pulse'
+                    }`} />
+                    <span className="font-semibold text-foreground">{agent.name}</span>
+                    <span className="rounded-full bg-secondary px-1.5 py-0.5 text-xs font-medium text-secondary-foreground">
+                      {agent.role}
+                    </span>
+                  </div>
+                  <div className="text-sm text-muted-foreground truncate" title={agent.activity}>
+                    {agent.activity}
+                  </div>
+                  {agent.duration && (
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      {agent.duration}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* BOTTOM SECTION - Engine Health + Output */}
         <div>

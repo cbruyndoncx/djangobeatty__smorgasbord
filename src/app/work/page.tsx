@@ -15,6 +15,20 @@ import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import type { Issue, IssueStatus, Convoy } from '@/types/beads';
 
+/**
+ * Check if a bead is a project work item (not internal system bead)
+ * Only show task/feature/bug/convoy that aren't wisps
+ */
+function isProjectBead(issue: Issue): boolean {
+  // Wisps are always internal regardless of type
+  if (issue.id.includes('-wisp-')) return false;
+  // Digests are squashed molecules
+  if (issue.title.startsWith('Digest: ')) return false;
+  // Only these types are project work
+  const projectTypes = ['task', 'feature', 'bug', 'convoy'];
+  return projectTypes.includes(issue.issue_type);
+}
+
 function WorkPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -27,6 +41,7 @@ function WorkPageContent() {
   const [highlightedIssueId, setHighlightedIssueId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'stalled' | 'completed'>('all');
+  const [showInternal, setShowInternal] = useState(false); // Hide internal beads by default
   const kanbanRef = useRef<HTMLDivElement>(null);
 
   // Context menu state
@@ -494,27 +509,39 @@ function WorkPageContent() {
               Beads
             </h2>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => refreshIssues()}
-            disabled={isLoading}
-          >
-            <svg
-              className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+          <div className="flex items-center gap-4">
+            {/* Show Internal Toggle */}
+            <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showInternal}
+                onChange={(e) => setShowInternal(e.target.checked)}
+                className="h-4 w-4 rounded border-border"
               />
-            </svg>
-            Refresh
-          </Button>
+              Show internal
+            </label>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refreshIssues()}
+              disabled={isLoading}
+            >
+              <svg
+                className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+              Refresh
+            </Button>
+          </div>
         </div>
 
         {error && (
@@ -552,7 +579,7 @@ function WorkPageContent() {
           </div>
         ) : (
           <KanbanBoard
-            issues={issues}
+            issues={showInternal ? issues : issues.filter(isProjectBead)}
             onStatusChange={handleStatusChange}
             highlightedIssueId={highlightedIssueId}
             selectedIssue={selectedIssue}

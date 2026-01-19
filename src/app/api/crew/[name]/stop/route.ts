@@ -1,13 +1,16 @@
 /**
  * API Route: POST /api/crew/[name]/stop
- * Stops a running crew member
- * Executes: gt crew stop <name>
+ * Stops a running crew member or HQ agent
+ * Executes: gt crew stop <name> OR gt <agent> stop for HQ agents
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { execGt } from '@/lib/exec-gt';
 
 export const dynamic = 'force-dynamic';
+
+// HQ-level agents that use gt <agent> stop instead of gt crew stop
+const HQ_AGENTS = ['mayor', 'deacon', 'witness', 'refinery'];
 
 export async function POST(
   request: NextRequest,
@@ -25,27 +28,41 @@ export async function POST(
       );
     }
 
-    if (!rig) {
+    // Sanitize name
+    const sanitizedName = crewName.replace(/[^a-zA-Z0-9_-]/g, '');
+    if (sanitizedName !== crewName) {
       return NextResponse.json(
-        { error: 'Rig is required' },
+        { error: 'Invalid crew member name' },
         { status: 400 }
       );
     }
 
-    // Sanitize inputs to prevent command injection
-    const sanitizedName = crewName.replace(/[^a-zA-Z0-9_-]/g, '');
-    const sanitizedRig = rig.replace(/[^a-zA-Z0-9_-]/g, '');
-
-    if (sanitizedName !== crewName || sanitizedRig !== rig) {
-      return NextResponse.json(
-        { error: 'Invalid crew member name or rig' },
-        { status: 400 }
-      );
+    // Determine command based on agent type
+    let command: string;
+    if (HQ_AGENTS.includes(sanitizedName.toLowerCase())) {
+      // HQ agents use gt <agent> stop
+      command = `gt ${sanitizedName.toLowerCase()} stop`;
+    } else {
+      // Crew members need rig
+      if (!rig) {
+        return NextResponse.json(
+          { error: 'Rig is required for crew members' },
+          { status: 400 }
+        );
+      }
+      const sanitizedRig = rig.replace(/[^a-zA-Z0-9_-]/g, '');
+      if (sanitizedRig !== rig) {
+        return NextResponse.json(
+          { error: 'Invalid rig name' },
+          { status: 400 }
+        );
+      }
+      command = `gt crew stop ${sanitizedName} --rig ${sanitizedRig}`;
     }
 
     try {
       const { stdout, stderr } = await execGt(
-        `gt crew stop ${sanitizedName} --rig ${sanitizedRig}`,
+        command,
         {
           timeout: 15000,
           cwd: process.env.GT_BASE_PATH || process.cwd(),

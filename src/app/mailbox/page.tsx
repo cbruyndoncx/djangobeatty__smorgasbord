@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { useMailbox, normalizeAddress } from '@/lib/use-mail';
 import { useCrewStatus } from '@/lib/use-crew';
 import { usePolecats, useRefineries, useWitnesses } from '@/lib/use-beads';
@@ -27,6 +28,43 @@ const statusColors: Record<Recipient['status'], string> = {
   stopped: 'bg-muted-foreground',
   error: 'bg-destructive',
 };
+
+// Copy button for messages
+function CopyButton({ text, className }: { text: string; className?: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      className={cn(
+        'p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-accent transition-colors',
+        className
+      )}
+      title="Copy message"
+    >
+      {copied ? (
+        <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+        </svg>
+      ) : (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+        </svg>
+      )}
+    </button>
+  );
+}
 
 // Highlight search terms in text
 function HighlightText({ text, query }: { text: string; query: string }) {
@@ -268,20 +306,37 @@ function ThreadDetail({ thread, onClose, onReply, searchQuery = '' }: ThreadDeta
             <div
               key={msg.id}
               className={cn(
-                'rounded-lg p-3 border max-w-[85%]',
+                'rounded-lg p-3 border max-w-[85%] group relative',
                 isFromMe
                   ? 'bg-primary/10 border-primary/30 ml-auto'
                   : 'bg-muted border-border mr-auto'
               )}
             >
+              {/* Copy button - appears on hover */}
+              {msg.body && (
+                <CopyButton
+                  text={msg.body}
+                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100"
+                />
+              )}
               {msg.subject && (
-                <p className="text-xs font-medium text-muted-foreground mb-1">
+                <p className="text-xs font-medium text-muted-foreground mb-1 pr-8">
                   <HighlightWithRefs text={msg.subject} />
                 </p>
               )}
-              <p className="text-sm text-foreground whitespace-pre-wrap">
-                {msg.body ? <HighlightWithRefs text={msg.body} /> : '(No content)'}
-              </p>
+              {msg.body ? (
+                searchQuery.trim() ? (
+                  <p className="text-sm text-foreground whitespace-pre-wrap">
+                    <HighlightWithRefs text={msg.body} />
+                  </p>
+                ) : (
+                  <div className="text-sm text-foreground prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-headings:my-2 prose-headings:!font-[system-ui] prose-ul:my-1 prose-ol:my-1 prose-li:my-0 prose-pre:my-2 prose-code:text-xs [&_h1]:!font-[system-ui] [&_h2]:!font-[system-ui] [&_h3]:!font-[system-ui] [&_h4]:!font-[system-ui]">
+                    <ReactMarkdown>{msg.body}</ReactMarkdown>
+                  </div>
+                )
+              ) : (
+                <p className="text-sm text-muted-foreground">(No content)</p>
+              )}
               <p className="text-xs text-muted-foreground mt-1 text-right">
                 {formatRelativeTime(msg.timestamp)}
               </p>

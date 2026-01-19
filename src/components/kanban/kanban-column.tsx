@@ -1,7 +1,6 @@
 'use client';
 
 import { useRef, useEffect, useCallback } from 'react';
-import { useVirtualizer } from '@tanstack/react-virtual';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/lib/theme-provider';
 import type { Issue } from '@/types/beads';
@@ -24,9 +23,6 @@ interface KanbanColumnProps {
   isDropTarget?: boolean;
   highlightedIssueId?: string | null;
 }
-
-// Estimated height for each issue card (including gap)
-const ESTIMATED_CARD_HEIGHT = 100;
 
 const columnConfig: Record<string, { color: string; bgColor: string }> = {
   open: {
@@ -76,24 +72,6 @@ export function KanbanColumn({
     closed: '✅',
   };
 
-  // Set up virtualizer for efficient rendering of long lists
-  const virtualizer = useVirtualizer({
-    count: issues.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => ESTIMATED_CARD_HEIGHT,
-    overscan: 3, // Render 3 extra items above/below viewport for smoother scrolling
-  });
-
-  // Scroll highlighted issue into view
-  useEffect(() => {
-    if (highlightedIssueId) {
-      const index = issues.findIndex((i) => i.id === highlightedIssueId);
-      if (index !== -1) {
-        virtualizer.scrollToIndex(index, { align: 'center', behavior: 'smooth' });
-      }
-    }
-  }, [highlightedIssueId, issues, virtualizer]);
-
   // Infinite scroll: detect when user scrolls near bottom
   const handleScroll = useCallback(() => {
     if (!parentRef.current || !hasMore || isLoadingMore || !onLoadMore) return;
@@ -113,8 +91,6 @@ export function KanbanColumn({
     scrollContainer.addEventListener('scroll', handleScroll);
     return () => scrollContainer.removeEventListener('scroll', handleScroll);
   }, [handleScroll]);
-
-  const virtualItems = virtualizer.getVirtualItems();
 
   // Display count: show total if available, otherwise loaded count
   const displayCount = total !== undefined ? total : issues.length;
@@ -172,68 +148,28 @@ export function KanbanColumn({
             No items
           </div>
         ) : (
-          <div
-            style={{
-              height: `${virtualizer.getTotalSize()}px`,
-              width: '100%',
-              position: 'relative',
-            }}
-          >
-            {virtualItems.map((virtualItem) => {
-              const issue = issues[virtualItem.index];
-              return (
-                <div
-                  key={issue.id}
-                  data-index={virtualItem.index}
-                  ref={virtualizer.measureElement}
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    transform: `translateY(${virtualItem.start}px)`,
-                  }}
-                  className="pb-2"
-                >
-                  <IssueCard
-                    issue={issue}
-                    onClick={onIssueClick}
-                    onDragStart={onIssueDragStart}
-                    onContextMenu={onIssueContextMenu}
-                    isHighlighted={highlightedIssueId === issue.id}
-                  />
-                </div>
-              );
-            })}
+          <div className="flex flex-col gap-2">
+            {issues.map((issue) => (
+              <IssueCard
+                key={issue.id}
+                issue={issue}
+                onClick={onIssueClick}
+                onDragStart={onIssueDragStart}
+                onContextMenu={onIssueContextMenu}
+                isHighlighted={highlightedIssueId === issue.id}
+              />
+            ))}
 
             {/* Loading indicator for infinite scroll */}
             {isLoadingMore && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  transform: `translateY(${virtualizer.getTotalSize()}px)`,
-                }}
-                className="flex items-center justify-center py-4"
-              >
+              <div className="flex items-center justify-center py-4">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               </div>
             )}
 
             {/* Load more hint */}
             {hasMore && !isLoadingMore && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  transform: `translateY(${virtualizer.getTotalSize()}px)`,
-                }}
-                className="flex items-center justify-center py-2"
-              >
+              <div className="flex items-center justify-center py-2">
                 <span className="text-xs text-muted-foreground">
                   Scroll for more ({issues.length} of {displayCount})
                 </span>

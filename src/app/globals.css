@@ -639,6 +639,24 @@ html.theme-smorgasbord h3.uppercase.tracking-wide,
   font-size: 0.75rem !important;
 }
 
+/* ==================== PROSE (MARKDOWN) CONTENT ==================== */
+/* Markdown prose headings should use body font, not Cherry Bomb */
+html.theme-smorgasbord .prose h1,
+html.theme-smorgasbord .prose h2,
+html.theme-smorgasbord .prose h3,
+html.theme-smorgasbord .prose h4,
+.theme-smorgasbord .prose h1,
+.theme-smorgasbord .prose h2,
+.theme-smorgasbord .prose h3,
+.theme-smorgasbord .prose h4 {
+  font-family: var(--font-mplus-rounded), 'M PLUS Rounded 1c', system-ui, sans-serif !important;
+  background: none !important;
+  -webkit-background-clip: initial !important;
+  -webkit-text-fill-color: currentColor !important;
+  background-clip: initial !important;
+  font-weight: 700 !important;
+}
+
 /* ==================== TERMINAL SCREEN DISPLAYS ==================== */
 /* Styled terminal output panels in Engine Room page */
 html.theme-smorgasbord .terminal-screen,

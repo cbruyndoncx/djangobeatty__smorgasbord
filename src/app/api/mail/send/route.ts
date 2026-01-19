@@ -44,13 +44,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (body.length > 5000) {
-      return NextResponse.json(
-        { error: 'Message body too long (max 5000 characters)' },
-        { status: 400 }
-      );
-    }
-
     // Escape for shell safety
     const escapedTo = to.replace(/'/g, "'\\''");
     const escapedBody = body.replace(/'/g, "'\\''");
