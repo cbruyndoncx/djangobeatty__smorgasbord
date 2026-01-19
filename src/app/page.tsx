@@ -983,9 +983,16 @@ export default function Dashboard() {
                         </span>
                       )}
                     </div>
-                    {/* Show activity with natural wrapping */}
-                    <div className="text-sm text-foreground">
-                      {agent.activity}
+                    {/* Show last 3 activities */}
+                    <div className="space-y-1">
+                      {agent.activities.slice(0, 3).map((act, idx) => (
+                        <div
+                          key={idx}
+                          className={`text-sm ${idx === 0 ? 'text-foreground' : 'text-muted-foreground text-xs'}`}
+                        >
+                          {act}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 ))}
