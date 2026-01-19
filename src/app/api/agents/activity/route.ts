@@ -36,7 +36,10 @@ function isUiChrome(line: string): boolean {
   if (trimmed.includes('⏵⏵')) return true;
   if (trimmed.includes('/ide for')) return true;
   if (trimmed.match(/^[▐▛▜▘▝]+$/)) return true;
-  if (trimmed.startsWith('❯') && trimmed.length < 3) return true;
+  // Filter out prompt lines (input prompt with or without text)
+  if (trimmed.startsWith('❯')) return true;
+  // Filter out common prompt indicators
+  if (trimmed.includes('↵ send')) return true;
   return false;
 }
 
@@ -113,22 +116,30 @@ function parseActivity(output: string): { activity: string; activities: string[]
     }
   }
 
-  // If at prompt, find the last meaningful content
-  const hasPrompt = output.includes('❯') && !output.includes('✻') && !output.includes('⏺');
+  // Check if actively thinking (has ellipsis pattern)
+  const isActivelyThinking = /[✻✶✢]\s+.+?(?:…|\.\.\.)/.test(output);
+
+  // If at prompt (has ❯ and not actively processing)
+  const hasPrompt = output.includes('❯') && !isActivelyThinking && !output.includes('⏺');
   if (hasPrompt) {
-    // Look for Claude's last response (starts after ⏺ and before ❯)
-    // Find lines with actual content (not just UI chrome)
-    const contentLines = lines.filter(l => !isUiChrome(l)).map(l => l.trim());
+    // Find lines with actual content (not just UI chrome or completion markers)
+    const contentLines = lines.filter(l => {
+      if (isUiChrome(l)) return false;
+      const trimmed = l.trim();
+      // Filter out completion markers like "✻ Sautéed for 1m 14s"
+      if (/^[✻✶✢]\s+\w+\s+for\s+\d+/.test(trimmed)) return false;
+      return true;
+    }).map(l => l.trim());
 
     // Get the last few meaningful lines
     const lastContent = contentLines.slice(-3).join(' ').trim();
     if (lastContent.length > 0) {
       // Truncate to reasonable length
       const truncated = lastContent.length > 80 ? lastContent.slice(0, 77) + '...' : lastContent;
-      return { activity: `Waiting: ${truncated}`, activities: recentActivities };
+      return { activity: `Idle: ${truncated}`, activities: recentActivities };
     }
 
-    return { activity: 'At prompt', activities: recentActivities };
+    return { activity: 'Idle', activities: recentActivities };
   }
 
   // Try to find any recent output as fallback (filter out UI chrome)
