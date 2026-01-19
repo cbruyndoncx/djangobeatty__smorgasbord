@@ -167,27 +167,22 @@ async function fetchConvoys(cachedConvoys?: Convoy[]): Promise<Convoy[]> {
 }
 
 /**
- * Fetch queue items for a refinery
+ * Fetch queue items for a refinery using JSON output
  */
 async function fetchRefineryQueue(rigName: string): Promise<QueueItem[]> {
   try {
-    const { stdout } = await execGt(`gt refinery queue ${rigName}`, {
+    const { stdout } = await execGt(`gt refinery queue ${rigName} --json`, {
       timeout: 5000,
       cwd: process.env.GT_BASE_PATH || process.cwd(),
     });
     if (!stdout || stdout.trim() === '') return [];
-    // Parse each line as a queue item (format varies, try to extract branch/PR info)
-    const lines = stdout.trim().split('\n').filter(line => line.trim().length > 0);
-    return lines.map((line, idx) => {
-      const trimmed = line.trim();
-      // Try to parse branch name from the line
-      const branchMatch = trimmed.match(/^([a-zA-Z0-9_/-]+)/);
-      return {
-        id: `queue-${idx}`,
-        title: trimmed,
-        branch: branchMatch?.[1],
-      };
-    });
+    const data = JSON.parse(stdout);
+    if (!Array.isArray(data)) return [];
+    return data.map((item: { mr: { id: string; branch: string; issue_id: string; status: string }; age: string }) => ({
+      id: item.mr.issue_id,
+      title: `${item.mr.branch} (${item.mr.issue_id})`,
+      branch: item.mr.branch,
+    }));
   } catch {
     return [];
   }
@@ -540,6 +535,20 @@ export async function GET() {
     // Fetch witnesses, polecats, and refineries from gt status --json (live data)
     const { witnesses, polecatsFromGt, refineries } = await fetchGtStatus();
     console.log(`[Beads API] Fetched gt status in ${Date.now() - t2}ms`);
+
+    // Enrich refinery queue items with issue titles and URLs
+    const issueMap = new Map(issues.map(i => [i.id, i]));
+    for (const refinery of refineries) {
+      if (refinery.queueItems) {
+        for (const item of refinery.queueItems) {
+          const issue = issueMap.get(item.id);
+          if (issue) {
+            item.title = `[${item.id}] ${issue.title}`;
+            item.url = `/work?issue=${item.id}`;
+          }
+        }
+      }
+    }
 
     // Fetch rigs from rigs.json (canonical source)
     const rigsFromRegistry = await fetchRigsFromRegistry();

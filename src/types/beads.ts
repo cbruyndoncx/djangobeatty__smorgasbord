@@ -118,6 +118,7 @@ export interface QueueItem {
   id: string;
   title?: string;
   branch?: string;
+  url?: string;
 }
 
 export interface Refinery {

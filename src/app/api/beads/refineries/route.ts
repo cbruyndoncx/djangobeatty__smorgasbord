@@ -1,24 +1,15 @@
 /**
  * API Route: GET /api/beads/refineries
  * Returns refinery status for all rigs in Gas Town
- * Includes merge queue depth and current PR being processed
+ * Uses gt mq list for queue data (no gh CLI dependency)
  */
 
 import { NextResponse } from 'next/server';
 import { getBeadsReader } from '@/lib/beads-reader';
-import type { Issue, Refinery, PullRequest, RefineryStatus, AgentState, RoleType } from '@/types/beads';
+import type { Issue, Refinery, RefineryStatus, AgentState, RoleType } from '@/types/beads';
 import { execGt } from '@/lib/exec-gt';
 
 export const dynamic = 'force-dynamic';
-
-interface GHPullRequest {
-  number: number;
-  title: string;
-  headRefName: string;
-  author: { login: string };
-  createdAt: string;
-  url: string;
-}
 
 function parseJsonl<T>(content: string): T[] {
   return content
@@ -34,40 +25,45 @@ function parseJsonl<T>(content: string): T[] {
     .filter((item): item is T => item !== null);
 }
 
-async function getGasTownPath(): Promise<string> {
-  try {
-    const { stdout } = await execGt('gt status --json', { timeout: 5000 });
-    const data = JSON.parse(stdout.trim());
-    return data.location || process.cwd();
-  } catch {
-    return process.env.GT_BASE_PATH ?? process.cwd();
-  }
+interface MergeQueueResult {
+  count: number;
+  items: { id: string; title?: string; branch?: string }[];
 }
 
-async function getPRsForRig(rigName: string): Promise<PullRequest[]> {
+/**
+ * Get the actual merge queue from GT
+ * Parses table output like:
+ *   📋 Merge queue for 'editor_gt5':
+ *   ID             SCORE PRI  CONVOY       BRANCH                   STATUS        AGE
+ *   ─────────────────────────────────────────────────────────────────────────────────
+ *   e5-pmc7       1202.8 P2   (none)       crew/Emma5               ready          2h
+ */
+async function getMergeQueue(rigName: string): Promise<MergeQueueResult> {
   try {
-    // Use gh CLI to get open PRs from the rig's directory
-    const basePath = await getGasTownPath();
-    const rigPath = `${basePath}/${rigName}`;
-
-    const { stdout } = await execGt(
-      `gh pr list --json number,title,headRefName,author,createdAt,url --limit 20`,
-      { cwd: rigPath }
-    );
-
-    const ghPRs: GHPullRequest[] = JSON.parse(stdout || '[]');
-
-    return ghPRs.map((pr) => ({
-      number: pr.number,
-      title: pr.title,
-      branch: pr.headRefName,
-      author: pr.author.login,
-      createdAt: pr.createdAt,
-      url: pr.url,
-    }));
+    const { stdout } = await execGt(`gt mq list ${rigName}`, { timeout: 5000 });
+    const lines = stdout.split('\n');
+    const items: MergeQueueResult['items'] = [];
+    for (const line of lines) {
+      // Match data rows: ID (e.g., e5-pmc7) followed by other columns
+      // Skip header line, separator line, and empty lines
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('ID') || trimmed.startsWith('─') || trimmed.startsWith('📋')) {
+        continue;
+      }
+      // Parse: ID  SCORE PRI  CONVOY  BRANCH  STATUS  AGE
+      const match = trimmed.match(/^(\S+)\s+[\d.]+\s+\S+\s+\S+\s+(\S+)\s+(\S+)/);
+      if (match) {
+        items.push({
+          id: match[1],      // e.g., "e5-pmc7"
+          branch: match[2],  // e.g., "crew/Emma5"
+          title: match[3],   // status as title for now, e.g., "ready"
+        });
+      }
+    }
+    return { count: items.length, items };
   } catch (error) {
-    console.error(`Error fetching PRs for ${rigName}:`, error);
-    return [];
+    console.error(`Error getting merge queue for ${rigName}:`, error);
+    return { count: 0, items: [] };
   }
 }
 
@@ -116,25 +112,25 @@ export async function GET() {
       .map((issue) => parseRefineryFromIssue(issue))
       .filter((r): r is Partial<Refinery> => r !== null);
 
-    // Fetch PRs for all rigs in parallel (much faster than sequential)
-    const prPromises = rigNames.map(rigName => getPRsForRig(rigName));
-    const allPRsArrays = await Promise.all(prPromises);
+    // Fetch merge queue data for all rigs in parallel
+    const queueResults = await Promise.all(
+      rigNames.map(rigName => getMergeQueue(rigName))
+    );
 
-    // Build refineries with PR data
+    // Build refineries with queue data only (no gh dependency)
     const refineries: Refinery[] = rigNames.map((rigName, index) => {
       const existingRefinery = refineryPartials.find((r) => r.rig === rigName);
-      const prs = allPRsArrays[index];
-      const currentPR = prs.length > 0 ? prs[0] : null;
-      const pendingPRs = prs.slice(1);
+      const queueResult = queueResults[index];
 
       return {
         id: existingRefinery?.id ?? `refinery-${rigName}`,
         name: existingRefinery?.name ?? `${rigName} Refinery`,
         rig: rigName,
-        status: existingRefinery?.status ?? (prs.length > 0 ? 'idle' : 'idle'),
-        queueDepth: prs.length,
-        currentPR,
-        pendingPRs,
+        status: existingRefinery?.status ?? 'idle',
+        queueDepth: queueResult.count,
+        queueItems: queueResult.items,
+        currentPR: null,
+        pendingPRs: [],
         lastProcessedAt: null,
         agent_state: existingRefinery?.agent_state ?? 'idle',
         unread_mail: existingRefinery?.unread_mail ?? 0,

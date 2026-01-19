@@ -1159,7 +1159,13 @@ export default function Dashboard() {
                             {refinery.queueItems.slice(0, 5).map((item, idx) => (
                               <div key={item.id} className="flex items-center gap-2 text-xs text-muted-foreground">
                                 <span className="text-muted-foreground/50">{idx + 1}.</span>
-                                <span className="truncate">{item.title || item.branch || 'Unknown'}</span>
+                                {item.url ? (
+                                  <Link href={item.url} className="truncate hover:text-primary hover:underline">
+                                    {item.title || item.branch || 'Unknown'}
+                                  </Link>
+                                ) : (
+                                  <span className="truncate">{item.title || item.branch || 'Unknown'}</span>
+                                )}
                               </div>
                             ))}
                             {refinery.queueItems.length > 5 && (
